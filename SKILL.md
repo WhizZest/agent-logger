@@ -1,6 +1,6 @@
 ---
 name: "agent-logger"
-description: "Records agent logs with structured markdown files. Invoke when completing complex tasks, learning new knowledge, making serious errors, when self-deemed necessary, or when user requests logging."
+description: "Records agent logs with structured markdown files. Invoke when completing complex tasks, learning new knowledge, making serious errors, being corrected by user, when no logs in recent 8 conversations, when self-deemed necessary, or when user requests logging."
 ---
 
 # Agent Logger
@@ -13,6 +13,8 @@ Invoke this skill in these scenarios:
 - **After completing a complex task**: When finishing multi-step or non-trivial work
 - **When learning new knowledge**: After discovering new technologies, patterns, or insights
 - **After making serious errors**: When significant mistakes occur that should be documented for future reference
+- **When being corrected by user**: When the user corrects your mistakes or provides corrections to your responses
+- **When no logs in recent 8 conversations**: When the last 8 conversation turns have not resulted in any log entries
 - **Self-reflection**: When you deem it necessary to record important information
 - **User request**: When the user explicitly asks to log something
 
