@@ -1,0 +1,255 @@
+---
+name: log-memory-searcher
+description: 智能日志回忆与搜索助手 - 当需要回忆过去事件、查找历史记录或整理某段时间的工作时使用。通过元数据索引快速定位相关日志文件。
+version: 1.0.0
+tags: ["log", "memory", "search", "recall", "metadata"]
+author: Assistant
+license: MIT
+---
+
+# Log Memory Searcher - 日志回忆与搜索助手
+
+## 触发条件
+
+在以下场景自动使用此 skill：
+
+1. **回忆请求**：用户询问"你还记得xx吗？"、"你回忆一下xx"，但你没有相关记忆或记忆不准确时
+2. **历史查找**：用户要求查找某些事情的记录、某个功能的实现过程、某个问题的解决方案等
+3. **时间回顾**：用户想了解某段时间做过的事情、某个项目的进展历程等
+4. **信息整理**：需要整理分散在多天的相关工作记录时
+
+## 核心能力
+
+- 📚 **智能检索**：基于 YAML front matter 元数据快速筛选相关日志
+- 🔍 **多维度搜索**：支持关键词、时间范围、类型、标签等多条件组合
+- 🔗 **关联探索**：自动追踪日志中引用的其他文档或日志
+- 📊 **结构化输出**：按时间线或主题整理相关信息
+
+## 工作流程
+
+### 第一步：分析用户需求
+
+理解用户想要回忆/查找的内容，提取关键信息：
+- **关键词**：涉及的技术、功能、问题等
+- **时间范围**：大概的时间段（如果用户提供）
+- **上下文**：相关的背景信息
+
+### 第二步：构建搜索策略
+
+根据需求选择合适的搜索参数：
+
+#### 场景 1：已知关键词
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search <关键词1> <关键词2> \
+  --fields title description file_path created type tags
+```
+
+#### 场景 2：指定时间范围
+```bash
+# 最近 N 天
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --recent-days 7 \
+  --fields title description file_path created
+
+# 指定日期范围
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --from-date 2026-03-01 \
+  --to-date 2026-03-31 \
+  --fields title description file_path created
+```
+
+#### 场景 3：OR 逻辑搜索（多个同义词）
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search "weread|微信读书|wxread" \
+  --fields title description file_path created
+```
+
+#### 场景 4：混合逻辑（A或B）且 C
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search "weread|微信读书" \
+  --search debug \
+  --fields title description file_path created
+```
+
+#### 场景 5：浏览所有日志（无明确关键词）
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --fields title description file_path created type \
+  --limit 20
+```
+
+### 第三步：执行搜索并分析结果
+
+1. **运行脚本**：执行 `extract-log-metadata.py` 获取元数据索引
+2. **查看索引文件**：读取生成的 `metadata-index.md` 或 `metadata-index.json`
+3. **初步筛选**：根据标题、描述、标签判断哪些日志可能相关
+4. **调整策略**：如果结果不理想，调整搜索参数重新执行
+
+### 第四步：深入阅读相关日志
+
+对于筛选出的相关日志：
+1. **读取完整内容**：使用 `read_file` 工具读取日志全文
+2. **提取关键信息**：关注问题解决过程、技术方案、经验教训等
+3. **追踪关联**：如果日志中提到其他文件或日志，继续深入探索
+
+### 第五步：整理并回答
+
+将找到的信息整理成清晰的回答：
+- **时间线**：按时间顺序梳理事件发展
+- **关键点**：突出重要的决策、发现、解决方案
+- **引用来源**：注明信息来源的日志文件
+- **关联信息**：如果有相关文档，一并提供
+
+## 使用示例
+
+### 示例 1：回忆某个功能的实现
+
+**用户**："你还记得微信读书的章节提取是怎么实现的吗？"
+
+**执行**：
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search weread chapter extract \
+  --fields title description file_path created tags
+```
+
+**分析**：查看索引文件，找到相关日志如：
+- "WeRead Chapter Extraction via Outline API"
+- "WeRead DOM-based Content Extraction"
+
+然后读取这些日志文件获取详细实现方案。
+
+### 示例 2：查找某段时间的工作
+
+**用户**："我上个月做了哪些工作？"
+
+**执行**：
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --from-date 2026-03-01 \
+  --to-date 2026-03-31 \
+  --fields title description file_path created type
+```
+
+**分析**：查看所有日志，按类型分类整理（learning、log、analysis 等）。
+
+### 示例 3：查找问题的解决过程
+
+**用户**："之前遇到的编码问题是怎么解决的？"
+
+**执行**：
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search encoding decode garbled \
+  --fields title description file_path created tags
+```
+
+**分析**：找到相关日志，读取详细内容了解解决方案。
+
+### 示例 4：追踪某个技术的发展历程
+
+**用户**："CDP 插件系统是怎么一步步开发出来的？"
+
+**执行**：
+```bash
+python extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search cdp plugin \
+  --oldest-first \
+  --fields title description file_path created
+```
+
+**分析**：按时间顺序（从旧到新）查看所有相关日志，梳理发展历程。
+
+## 最佳实践
+
+### 1. 优先使用元数据过滤
+- ✅ 先用 `--fields` 限制返回字段，减少数据量
+- ✅ 用 `--limit` 限制结果数量，避免信息过载
+- ✅ 结合 `--search` 精准定位
+
+### 2. 灵活调整搜索策略
+- 如果第一次搜索结果太少 → 放宽关键词或使用 OR 逻辑
+- 如果搜索结果太多 → 增加关键词或使用 AND 逻辑
+- 如果找不到相关内容 → 尝试同义词或相关概念
+
+### 3. 善用时间范围
+- 用户提到"最近" → 使用 `--recent-days 7` 或 `--recent-days 30`
+- 用户提到具体月份 → 使用 `--from-date` 和 `--to-date`
+- 不确定时间 → 先不限制时间，从结果中判断
+
+### 4. 深入探索关联内容
+- 日志中提到的 PR、Issue、文档 → 继续查找相关文件
+- 技术方案的演进 → 查找前后相关的日志
+- 问题的根因分析 → 查找相关的 analysis 类型日志
+
+### 5. 输出格式选择
+- **默认 MD 格式**：适合人类阅读，结构清晰
+- **JSON 格式**：适合程序处理，使用 `--format json`
+
+## 注意事项
+
+⚠️ **路径配置**：
+- 默认日志路径为 `<workspace>/.log/`
+- 必须使用 `--path` 参数指定路径
+- 可以使用相对路径（相对于当前工作目录）或绝对路径
+
+⚠️ **性能考虑**：
+- 日志文件较多时，先用 `--limit` 限制数量
+- 复杂搜索可以先缩小时间范围
+- 避免一次性加载所有日志的完整内容
+
+⚠️ **信息准确性**：
+- 元数据中的 `title` 和 `description` 可能不够详细
+- 重要信息需要阅读日志全文确认
+- 注意日志的时间戳（created vs last_accessed）
+
+## 附录：extract-log-metadata.py 参数速查
+
+```bash
+# 必需参数
+--path, -p          指定扫描的日志目录路径
+
+# 字段控制
+--fields            指定要提取的字段（默认：title, description, file_path）
+--all, -a           提取所有字段
+
+# 搜索过滤
+--search, -s        搜索关键词（支持多个，AND 逻辑）
+                     使用 | 分隔符实现 OR 逻辑
+
+# 时间范围
+--recent-days, -r   最近 N 天
+--from-date         起始日期（YYYY-MM-DD）
+--to-date           结束日期（YYYY-MM-DD）
+
+# 排序
+--oldest-first      从旧到新排序（默认从新到旧）
+
+# 数量限制
+--limit, -l         限制结果数量（默认 50，0 表示不限制）
+
+# 输出格式
+--format            输出格式：md（默认）或 json
+
+# 调试
+--debug, -d         显示详细处理过程
+--help              显示帮助信息
+```
+
+## 相关技能
+
+- **agent-logger**：记录新的 agent 日志
+- **create-skill**：创建新的技能文档
