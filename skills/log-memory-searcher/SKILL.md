@@ -40,7 +40,7 @@ license: MIT
 
 #### 场景 1：已知关键词
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search <关键词1> <关键词2> \
   --fields title description file_path created type tags
@@ -49,13 +49,13 @@ python extract-log-metadata.py \
 #### 场景 2：指定时间范围
 ```bash
 # 最近 N 天
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --recent-days 7 \
   --fields title description file_path created
 
 # 指定日期范围
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --from-date 2026-03-01 \
   --to-date 2026-03-31 \
@@ -64,7 +64,7 @@ python extract-log-metadata.py \
 
 #### 场景 3：OR 逻辑搜索（多个同义词）
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search "weread|微信读书|wxread" \
   --fields title description file_path created
@@ -72,7 +72,7 @@ python extract-log-metadata.py \
 
 #### 场景 4：混合逻辑（A或B）且 C
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search "weread|微信读书" \
   --search debug \
@@ -81,7 +81,7 @@ python extract-log-metadata.py \
 
 #### 场景 5：浏览所有日志（无明确关键词）
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --fields title description file_path created type \
   --limit 20
@@ -89,7 +89,7 @@ python extract-log-metadata.py \
 
 ### 第三步：执行搜索并分析结果
 
-1. **运行脚本**：执行 `extract-log-metadata.py` 获取元数据索引
+1. **运行脚本**：执行 `scripts/extract-log-metadata.py` 获取元数据索引
 2. **查看索引文件**：读取脚本输出的索引文件（脚本会显示准确的文件路径）
 3. **初步筛选**：根据标题、描述、标签判断哪些日志可能相关
 4. **调整策略**：如果结果不理想，调整搜索参数重新执行
@@ -122,7 +122,7 @@ python extract-log-metadata.py \
 
 **执行**：
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search weread chapter extract \
   --fields title description file_path created tags
@@ -140,7 +140,7 @@ python extract-log-metadata.py \
 
 **执行**：
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --from-date 2026-03-01 \
   --to-date 2026-03-31 \
@@ -155,7 +155,7 @@ python extract-log-metadata.py \
 
 **执行**：
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search encoding decode garbled \
   --fields title description file_path created tags
@@ -169,7 +169,7 @@ python extract-log-metadata.py \
 
 **执行**：
 ```bash
-python extract-log-metadata.py \
+python scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search cdp plugin \
   --oldest-first \
@@ -234,7 +234,7 @@ python extract-log-metadata.py \
 - 必须获取系统当前真实时间（ISO 8601 format with timezone）
 - 严禁猜测时间或使用过期时间
 
-## 附录：extract-log-metadata.py 参数速查
+## 附录：scripts/extract-log-metadata.py 参数速查
 
 ```bash
 # 必需参数
