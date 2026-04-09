@@ -99,11 +99,11 @@ python extract-log-metadata.py \
 对于筛选出的相关日志：
 1. **读取完整内容**：使用适当的工具读取日志全文
 2. **提取关键信息**：关注问题解决过程、技术方案、经验教训等
-3. **更新时间戳**：如果日志符合需求或被编辑修改，必须更新 `last_accessed` 字段
+3. **更新时间戳**：如果日志符合需求或被编辑修改，必须更新 YAML front matter 元数据中的`last_accessed` 字段
    - 获取当前真实时间（ISO 8601 format with timezone）
    - 如果存在 `last_accessed` 字段，更新其值
    - 如果不存在 `last_accessed` 字段，添加该字段
-   - ⚠️ **重要**：必须使用系统当前时间，不要猜测或硬编码
+   - ⚠️ **重要**：必须使用系统当前时间，不要猜测
 4. **评估充分性**：如果已获得足够信息，可以停止；如有必要，再追踪关联文档
 
 ### 第五步：整理并回答
@@ -203,8 +203,8 @@ python extract-log-metadata.py \
 
 ### 5. 及时更新时间戳
 - **何时更新**：阅读日志后认为符合需求，或编辑修改了日志内容
-- **如何更新**：获取当前真实时间（ISO 8601 format with timezone），更新或添加 `last_accessed` 字段
-- **重要原则**：必须使用系统当前时间，严禁猜测或硬编码时间
+- **如何更新**：获取当前真实时间（ISO 8601 format with timezone），在 YAML front matter 中更新或添加 `last_accessed` 字段
+- **重要原则**：必须使用系统当前时间，严禁猜测时间
 - **目的**：保持元数据的准确性，便于后续按访问时间排序和筛选
 
 ### 6. 输出格式选择
@@ -229,10 +229,10 @@ python extract-log-metadata.py \
 - 注意日志的时间戳（created vs last_accessed）
 
 ⚠️ **时间戳更新**：
-- 阅读相关日志后，必须更新或添加 `last_accessed` 字段
-- 编辑修改日志内容后，也必须更新 `last_accessed`
-- 必须获取系统当前真实时间（ISO 8601 with timezone）
-- 严禁猜测、硬编码或使用过期时间
+- 阅读相关日志后，如果认为符合需求，必须更新或添加 YAML front matter 中的 `last_accessed` 字段
+- 编辑修改日志内容后，也必须更新或添加 YAML front matter 中的 `last_accessed` 字段
+- 必须获取系统当前真实时间（ISO 8601 format with timezone）
+- 严禁猜测时间或使用过期时间
 
 ## 附录：extract-log-metadata.py 参数速查
 
@@ -270,4 +270,4 @@ python extract-log-metadata.py \
 ## 相关技能
 
 - **agent-logger**：记录新的 agent 日志
-- **create-skill**：创建新的技能文档
+- **everything-search**：根据关键词搜索文档所在路径，仅适用于Windows
