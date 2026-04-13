@@ -27,7 +27,7 @@ Invoke this skill in these scenarios:
 ### Step 2: Create Log Directory
 - Check if `<workspace>/.log/<yyyy-MM-dd>/` exists
 - If not, create the directory structure
-- Example: `D:\agentSpace\.log\2026-03-18\`
+- `<workspace>` is the root directory of project workspace
 
 ### Step 3: Generate Log File
 - Create markdown file in the date directory
@@ -88,6 +88,25 @@ language: "zh"  # or "en", etc.
   - Database credentials: `user=admin&pass=secret` → `DB_CREDENTIALS`
 - **Why this matters**: Logs may be shared, backed up, or accessed by others. Protecting sensitive information prevents security breaches
 - **General principle**: If it's a secret, authentication credential, or personally identifiable information, use a placeholder
+
+### Path Handling
+- **Never log fragile file paths outside `.log` directory**: Do not include absolute paths, long relative paths, or `../` traversal paths in log content — these break when files are reorganized. Short conventional module names used as descriptive labels (e.g., `models/user.py`, `hooks/useState.ts`) are acceptable as identity references, not location instructions
+- **Paths are ephemeral**: Files get moved, renamed, deleted, or reorganized constantly. Both `d:\project\src\utils.js` and `src/utils.js` become equally useless once the file changes location or no longer exists
+- **Reference code by identity, not location**: When referring to code, use descriptive identifiers instead of paths:
+  - Use **file name + entity name**: `helpers.js 中的 formatDate() 函数`, `UserModel class in models/user.py`
+  - Use **inline code snippets**: Paste the relevant code directly into the log so it's self-contained
+  - Use **descriptive labels**: `项目根目录的 package.json`, `agent-logger skill 的 SKILL.md`
+- **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use Obsidian-style bidirectional links `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
+  - **Uniqueness is required**: The link target must be uniquely identifiable. Generic names like `[[SKILL]]` or `[[README]]` are ambiguous when multiple skills/repos exist
+  - **Suffix rules**:
+    - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (Obsidian default)
+    - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
+  - ✅ Good: `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[React Hooks Learning]]`, `[[weread-cli/utils]]`, `[[ollama-tool-call-demo.ts]]`, `[[formatDate function]]`
+  - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
+  - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets (use namespace-style like `[[gh-cli/SKILL]]`)
+  - ❌ Bad: `[[pr-reviews.md]]` — .md files should not include suffix
+- **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026-04-13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
+- **Why this matters**: A log entry saying "fixed a bug in `src/utils/helpers.js`" is worthless when that path no longer exists. But "fixed a bug in the `formatDate()` function that caused timezone offset errors" remains useful forever, and the inline code snippet preserves the exact context
 
 ### Knowledge Graph Friendly Syntax
 Use markdown syntax that supports knowledge graph generation:
@@ -165,13 +184,48 @@ useEffect(() => {
 
 1. **One topic per document**: Focus each log on a single topic for better organization
 2. **Protect sensitive information**: Never log passwords, tokens, keys, or credentials - use placeholders instead
-3. **Be specific**: Use clear, descriptive titles
-4. **Include context**: Explain why the log entry matters
-5. **Add tags**: Use relevant tags for easy retrieval
-6. **Link related entries**: Create connections between related logs
-7. **Keep it structured**: Use consistent formatting
-8. **Document learnings**: Focus on what was learned or achieved
-9. **Note improvements**: Record ideas for future improvements
+3. **Avoid real file paths**: Never log any filesystem paths (absolute or relative) outside `.log` directory - reference code by identity (function/class name + file name) or inline snippets instead
+4. **Be specific**: Use clear, descriptive titles
+5. **Include context**: Explain why the log entry matters
+6. **Add tags**: Use relevant tags for easy retrieval
+7. **Link related entries**: Create connections between related logs
+8. **Keep it structured**: Use consistent formatting
+9. **Document learnings**: Focus on what was learned or achieved
+10. **Note improvements**: Record ideas for future improvements
+
+## Wikilink Validation
+
+After writing a log, manually check **file-reference** bidirectional links using `fd`:
+
+> **What to validate**: Only validate links that reference actual files (contain `/` path separator or known skill namespaces like `gh-cli/`, `agent-logger/`). Skip **concept/topic** links (plain names without `/`) — these are forward references that may not have files yet.
+
+```bash
+# Check a wikilink: convert [[path/to/file]] to fd pattern
+fd -p "path/to/file.md$" <workspace> --max-results 5
+
+# Examples (Windows use \\, Linux/macOS use /):
+# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --max-results 5      (Windows)
+#                                   fd -p "gh-cli/SKILL.md$" <workspace> --max-results 5         (Linux/macOS)
+# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --max-results 5
+# [[Topic Name]]                →  SKIP (concept link, no file required)
+```
+
+**Interpret results**:
+- **1 match**: Link is valid and unique ✅
+- **0 matches**: BROKEN — target file doesn't exist or path is wrong ❌
+- **2+ matches**: AMBIGUOUS — use more specific path in the link (e.g., `[[gh-cli/SKILL]]` instead of `[[SKILL]]`) ⚠️
+
+**Requirements**: Install `fd` (cross-platform):
+- **Windows**: `winget install sharkdp.fd`
+- **macOS**: `brew install fd`
+- **Linux**: check package manager for `fd-find` or download from GitHub releases
+
+**Pattern rules**:
+- Replace `/` with OS path separator: `\\` on Windows, `/` on Linux/macOS
+- `.md` files: append `.md$` to the pattern (anchor to filename end, excludes `.bak`, `.old` etc.)
+- Non-`.md` files: keep original suffix + `$`
+- Always use `--max-results 5` to limit output
+- **Regex safety**: If link target contains regex metacharacters (`.`, `(`, `)`, `[`, `]`, `+`, `?`), escape them with `\` in the fd pattern. In practice, wikilink targets rarely contain these characters
 
 ## Implementation Notes
 
