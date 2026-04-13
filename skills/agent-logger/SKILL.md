@@ -90,7 +90,7 @@ language: "zh"  # or "en", etc.
 - **General principle**: If it's a secret, authentication credential, or personally identifiable information, use a placeholder
 
 ### Path Handling
-- **Never log real file paths outside `.log` directory**: Do not include any filesystem paths (absolute or relative) in log content
+- **Never log fragile file paths outside `.log` directory**: Do not include absolute paths, long relative paths, or `../` traversal paths in log content — these break when files are reorganized. Short conventional module names used as descriptive labels (e.g., `models/user.py`, `hooks/useState.ts`) are acceptable as identity references, not location instructions
 - **Paths are ephemeral**: Files get moved, renamed, deleted, or reorganized constantly. Both `d:\project\src\utils.js` and `src/utils.js` become equally useless once the file changes location or no longer exists
 - **Reference code by identity, not location**: When referring to code, use descriptive identifiers instead of paths:
   - Use **file name + entity name**: `helpers.js 中的 formatDate() 函数`, `UserModel class in models/user.py`
@@ -99,11 +99,11 @@ language: "zh"  # or "en", etc.
 - **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use Obsidian-style bidirectional links `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
   - **Uniqueness is required**: The link target must be uniquely identifiable. Generic names like `[[SKILL]]` or `[[README]]` are ambiguous when multiple skills/repos exist
   - **Suffix rules**:
-    - `.md` files: **No suffix needed** — `[[SKILL]]` links to `SKILL.md` (Obsidian default)
+    - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (Obsidian default)
     - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
   - ✅ Good: `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[React Hooks Learning]]`, `[[weread-cli/utils]]`, `[[ollama-tool-call-demo.ts]]`, `[[formatDate function]]`
   - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
-  - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets
+  - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets (use namespace-style like `[[gh-cli/SKILL]]`)
   - ❌ Bad: `[[pr-reviews.md]]` — .md files should not include suffix
 - **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026-04-13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
 - **Why this matters**: A log entry saying "fixed a bug in `src/utils/helpers.js`" is worthless when that path no longer exists. But "fixed a bug in the `formatDate()` function that caused timezone offset errors" remains useful forever, and the inline code snippet preserves the exact context
@@ -195,7 +195,9 @@ useEffect(() => {
 
 ## Wikilink Validation
 
-After writing a log, manually check each bidirectional link using `fd`:
+After writing a log, manually check **file-reference** bidirectional links using `fd`:
+
+> **What to validate**: Only validate links that reference actual files (contain `/` path separator or known skill namespaces like `gh-cli/`, `agent-logger/`). Skip **concept/topic** links (plain names without `/`) — these are forward references that may not have files yet.
 
 ```bash
 # Check a wikilink: convert [[path/to/file]] to fd pattern
@@ -205,7 +207,7 @@ fd -p "path/to/file.md$" <workspace> --max-results 5
 # [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --max-results 5      (Windows)
 #                                   fd -p "gh-cli/SKILL.md$" <workspace> --max-results 5         (Linux/macOS)
 # [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --max-results 5
-# [[Topic Name]]                →  fd -p "Topic Name.md$" <workspace> --max-results 5
+# [[Topic Name]]                →  SKIP (concept link, no file required)
 ```
 
 **Interpret results**:
@@ -223,6 +225,7 @@ fd -p "path/to/file.md$" <workspace> --max-results 5
 - `.md` files: append `.md$` to the pattern (anchor to filename end, excludes `.bak`, `.old` etc.)
 - Non-`.md` files: keep original suffix + `$`
 - Always use `--max-results 5` to limit output
+- **Regex safety**: If link target contains regex metacharacters (`.`, `(`, `)`, `[`, `]`, `+`, `?`), escape them with `\` in the fd pattern. In practice, wikilink targets rarely contain these characters
 
 ## Implementation Notes
 
