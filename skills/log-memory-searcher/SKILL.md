@@ -54,7 +54,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
   --recent-days 7 \
   --fields title description file_path created
 
-# 指定日期范围，如果不指定--to-date，则默认到当前时间
+# 指定日期范围，如果不指定--to-date，则默认为当前日期
 python <skill_dir>/scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --from-date 2026-03-01 \
