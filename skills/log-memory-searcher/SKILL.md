@@ -54,7 +54,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
   --recent-days 7 \
   --fields title description file_path created
 
-# 指定日期范围
+# 指定日期范围，如果不指定--to-date，则默认为当前日期
 python <skill_dir>/scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --from-date 2026-03-01 \
@@ -99,7 +99,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 对于筛选出的相关日志：
 1. **读取完整内容**：使用适当的工具读取日志全文
 2. **提取关键信息**：关注问题解决过程、技术方案、经验教训等
-3. **更新时间戳**：如果日志符合需求或被编辑修改，必须更新 YAML front matter 元数据中的`last_accessed` 字段
+3. **"用进废退"原则**：如果认为日志有用、有价值，则添加或更新 YAML front matter 元数据中的`last_accessed` 字段，让该日志不容易随时间而被遗忘，无用的日志则会随时间的推移而被遗忘
    - 获取当前真实时间（ISO 8601 format with timezone），精确到秒，不要毫秒！
    - 如果存在 `last_accessed` 字段，更新其值
    - 如果不存在 `last_accessed` 字段，添加该字段
@@ -269,5 +269,5 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 
 ## 相关技能
 
-- **agent-logger**：记录新的 agent 日志
-- **everything-search**：根据关键词搜索文档所在路径，仅适用于Windows
+- [[agent-logger/SKILL]]：记录新的 agent 日志
+- [[everything-search/SKILL]]：根据关键词搜索文档所在路径，仅适用于Windows
