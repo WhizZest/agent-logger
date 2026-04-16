@@ -225,6 +225,7 @@ fd -p "path/to/file.md$" <workspace> --hidden --max-results 5
 - `.md` files: append `.md$` to the pattern (anchor to filename end, excludes `.bak`, `.old` etc.)
 - Non-`.md` files: keep original suffix + `$`
 - Always use `--max-results 5` to limit output
+- **Always use `--hidden`** to include dotfiles and hidden directories (e.g., `.git/`, `.vscode/`)
 - **Regex safety**: If link target contains regex metacharacters (`.`, `(`, `)`, `[`, `]`, `+`, `?`), escape them with `\` in the fd pattern. In practice, wikilink targets rarely contain these characters
 
 ## Implementation Notes
