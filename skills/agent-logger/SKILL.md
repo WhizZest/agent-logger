@@ -201,12 +201,12 @@ After writing a log, manually check **file-reference** bidirectional links using
 
 ```bash
 # Check a wikilink: convert [[path/to/file]] to fd pattern
-fd -p "path/to/file.md$" <workspace> --max-results 5
+fd -p "path/to/file.md$" <workspace> --hidden --max-results 5
 
 # Examples (Windows use \\, Linux/macOS use /):
-# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --max-results 5      (Windows)
-#                                   fd -p "gh-cli/SKILL.md$" <workspace> --max-results 5         (Linux/macOS)
-# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --max-results 5
+# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --hidden --max-results 5      (Windows)
+#                                   fd -p "gh-cli/SKILL.md$" <workspace> --hidden --max-results 5         (Linux/macOS)
+# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --hidden --max-results 5
 # [[Topic Name]]                →  SKIP (concept link, no file required)
 ```
 
@@ -225,6 +225,7 @@ fd -p "path/to/file.md$" <workspace> --max-results 5
 - `.md` files: append `.md$` to the pattern (anchor to filename end, excludes `.bak`, `.old` etc.)
 - Non-`.md` files: keep original suffix + `$`
 - Always use `--max-results 5` to limit output
+- **Always use `--hidden`** to include hidden directories (e.g., `.log/` which stores agent logs)
 - **Regex safety**: If link target contains regex metacharacters (`.`, `(`, `)`, `[`, `]`, `+`, `?`), escape them with `\` in the fd pattern. In practice, wikilink targets rarely contain these characters
 
 ## Implementation Notes
