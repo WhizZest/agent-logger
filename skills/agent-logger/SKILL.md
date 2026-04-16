@@ -201,12 +201,12 @@ After writing a log, manually check **file-reference** bidirectional links using
 
 ```bash
 # Check a wikilink: convert [[path/to/file]] to fd pattern
-fd -p "path/to/file.md$" <workspace> --max-results 5
+fd -p "path/to/file.md$" <workspace> --hidden --max-results 5
 
 # Examples (Windows use \\, Linux/macOS use /):
-# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --max-results 5      (Windows)
-#                                   fd -p "gh-cli/SKILL.md$" <workspace> --max-results 5         (Linux/macOS)
-# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --max-results 5
+# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --hidden --max-results 5      (Windows)
+#                                   fd -p "gh-cli/SKILL.md$" <workspace> --hidden --max-results 5         (Linux/macOS)
+# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --hidden --max-results 5
 # [[Topic Name]]                →  SKIP (concept link, no file required)
 ```
 
