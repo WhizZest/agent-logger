@@ -138,7 +138,7 @@ language: "zh"
 ---
 ```
 
-```markdown
+````markdown
 # 学习了React Hooks
 
 **Time**: 2026-03-18T20:56:00+08:00
@@ -169,7 +169,7 @@ useEffect(() => {
 
 - [[React Components]]
 - [[State Management]]
-```
+````
 
 ## Log Types
 
