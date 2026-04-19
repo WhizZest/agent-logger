@@ -42,7 +42,7 @@ Invoke this skill in these scenarios:
 title: "Topic Title" # Always use English for title
 created: "2026-03-18T20:56:00+08:00"
 type: "log"  # or "learning", "error", "reflection"
-tags: ["#tag1", "#tag2", "#tag3"] # Use Obsidian-style tags
+tags: ["#tag1", "#tag2", "#tag3"] # Use graph-compatible tags
 language: "zh"  # or "en", etc.
 ---
 ```
@@ -96,10 +96,10 @@ language: "zh"  # or "en", etc.
   - Use **file name + entity name**: `helpers.js 中的 formatDate() 函数`, `UserModel class in models/user.py`
   - Use **inline code snippets**: Paste the relevant code directly into the log so it's self-contained
   - Use **descriptive labels**: `项目根目录的 package.json`, `agent-logger skill 的 SKILL.md`
-- **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use Obsidian-style bidirectional links `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
+- **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use bidirectional wikilinks `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
   - **Uniqueness is required**: The link target must be uniquely identifiable. Generic names like `[[SKILL]]` or `[[README]]` are ambiguous when multiple skills/repos exist
   - **Suffix rules**:
-    - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (Obsidian default)
+    - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (standard wikilink convention)
     - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
   - ✅ Good: `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[React Hooks Learning]]`, `[[weread-cli/utils]]`, `[[ollama-tool-call-demo.ts]]`, `[[formatDate function]]`
   - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
@@ -110,7 +110,7 @@ language: "zh"  # or "en", etc.
 
 ### Knowledge Graph Friendly Syntax
 Use markdown syntax that supports knowledge graph generation:
-- **Tags**: Use Obsidian-style tags like `#concept`, `#technology`
+- **Tags**: Use graph-compatible tags like `#concept`, `#technology`
 - **Links**: Create bidirectional links between related entries
 - **Headings**: Use clear hierarchical structure (H1, H2, H3)
 - **Lists**: Use bullet points for key takeaways
