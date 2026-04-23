@@ -407,6 +407,12 @@ def main():
     # 获取所有 .md 文件
     md_files = sorted(log_dir.rglob('*.md'))
     
+    # 排除 dreams/ 目录下的文件
+    dreams_dir = log_dir / 'dreams'
+    if dreams_dir.exists():
+        dreams_files = set(dreams_dir.rglob('*.md'))
+        md_files = [f for f in md_files if f not in dreams_files]
+    
     print("开始提取元信息...")
     print(f"找到 {len(md_files)} 个日志文件")
     
