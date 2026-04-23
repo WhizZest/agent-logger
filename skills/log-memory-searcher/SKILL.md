@@ -216,7 +216,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 **快速概览**：
 
 1. **前置检查**：检查 Git 是否有未提交修改，有则提醒用户先提交
-2. **选择入口**：运行 `dream-entry-selector.py`，根据统计偏向和续梦提示选择入口日志
+2. **选择入口**：Agent 检查上次梦境的续梦提示；有提示时先用 `extract-log-metadata.py` 搜索候选日志，再调用 `dream-entry-selector.py` 选择入口；无提示时直接调用 `dream-entry-selector.py`
 3. **自由联想游走**：通过 wikilink、标签相似度在日志间游走，收集发现
 4. **产出三种输出**：
    - ① 修改原始日志（添加带关系类型的 wikilink、补充 description）

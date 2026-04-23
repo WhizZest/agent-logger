@@ -9,6 +9,8 @@
   - [工作流程](#工作流程)
     - [第一步：前置检查](#第一步前置检查)
     - [第二步：选择入口](#第二步选择入口)
+      - [情况 A：有续梦提示](#情况-a有续梦提示)
+      - [情况 B：无续梦提示（或搜索无结果）](#情况-b无续梦提示或搜索无结果)
     - [第三步：自由联想游走](#第三步自由联想游走)
     - [第四步：产出三种输出](#第四步产出三种输出)
       - [输出①：修改原始日志](#输出修改原始日志)
@@ -55,7 +57,38 @@ git status --short
 
 ### 第二步：选择入口
 
-运行入口选择脚本：
+1. **检查续梦提示**：Agent 查看 `<workspace>/.log/dreams/` 下最新的梦境报告，读取其 `next_dream_hint` 字段
+2. 根据是否有续梦提示，选择对应流程：
+
+#### 情况 A：有续梦提示
+
+1. **Agent 提取关键词**：从 `next_dream_hint` 中提取有意义的关键词。例如续梦提示为"继续探索数据库优化和日志压缩的关联"，Agent 应提取关键词：`数据库`、`优化`、`日志压缩`
+2. **搜索候选日志**：调用 `extract-log-metadata.py` 搜索匹配的日志：
+
+```bash
+python <skill_dir>/scripts/extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search "数据库|优化|日志压缩" \
+  --fields file_path \
+  --format json \
+  --limit 0
+```
+
+3. **选择入口**：将搜索结果传给 `dream-entry-selector.py`：
+
+```bash
+python <skill_dir>/scripts/dream-entry-selector.py \
+  --log-path <workspace>/.log/ \
+  --dreams-path <workspace>/.log/dreams/ \
+  --hint-candidates <workspace>/.log/metadata-index.json \
+  --fields title,description,tags
+```
+
+**⚠️ 如果搜索结果为 0 或脚本报错**：Agent 可以调整关键词重试，或者省略 `--hint-candidates` 直接进入情况 B。
+
+#### 情况 B：无续梦提示（或搜索无结果）
+
+直接运行入口选择脚本，无需候选列表：
 
 ```bash
 python <skill_dir>/scripts/dream-entry-selector.py \
@@ -68,12 +101,11 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 - **入口日志**：推荐的起始日志路径
 - **选择理由**：为什么选这个入口
 - **梦境编号**：当前是第几次做梦
-- **续梦提示**：上次梦境留下的提示（如有）
 
 入口选择算法：
 - **首次做梦**：100% 随机选择
-- **有统计但无续梦提示**：40% 偏向被梦到少的 + 60% 随机
-- **有统计且有续梦提示**：40% 偏向被梦到少的 + 30% 续梦提示引导 + 30% 随机
+- **有统计但无续梦候选**：40% 偏向被梦到少的 + 60% 随机
+- **有统计且有续梦候选**：40% 偏向被梦到少的 + 30% 续梦候选引导 + 30% 随机
 
 偏向"被梦到少"的具体实现：取 visit_count 最低的前 20% 日志，使用逆权重采样（权重 = 1/(visit_count+1)），次数越少概率越高。
 
@@ -255,6 +287,8 @@ next_dream_hint: "<给下次做梦的提示>"
 --dreams-path       梦境目录路径（必需）
 
 # 可选参数
+--hint-candidates   续梦候选日志的 JSON 文件路径（由 extract-log-metadata.py 生成）
+                    例如: --hint-candidates <workspace>/.log/metadata-index.json
 --fields, -f        要输出的额外字段，逗号分隔
                     例如: --fields title,description,tags
 --debug, -d         显示详细调试信息

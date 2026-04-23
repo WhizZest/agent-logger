@@ -5,11 +5,13 @@
 
 使用方法:
     python dream-entry-selector.py --log-path <workspace>/.log/ --dreams-path <workspace>/.log/dreams/
+    python dream-entry-selector.py --log-path <workspace>/.log/ --dreams-path <workspace>/.log/dreams/ --hint-candidates metadata-index.json
     python dream-entry-selector.py --log-path <workspace>/.log/ --dreams-path <workspace>/.log/dreams/ --fields title,description,file_path
     python dream-entry-selector.py --log-path <workspace>/.log/ --dreams-path <workspace>/.log/dreams/ --debug
 """
 
-import os
+import sys
+import json
 import re
 import argparse
 import random
@@ -90,7 +92,7 @@ def load_stats(stats_path):
 
     current_path = None
     for line in content.split('\n'):
-        line = line.strip()
+        line = line.rstrip()
         if not line or line.startswith('#'):
             continue
 
@@ -127,29 +129,19 @@ def save_stats(stats_path, stats):
             f.write(f'  last_dreamed: "{last_dreamed}"\n\n')
 
 
-def get_latest_dream_hint(dreams_path):
-    dream_files = sorted(dreams_path.glob('dream-*.md'), reverse=True)
-    if not dream_files:
-        return None, None
-
-    for dream_file in dream_files:
-        try:
-            with open(dream_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            metadata = extract_yaml_frontmatter(content)
-            if metadata and metadata.get('next_dream_hint'):
-                hint = metadata['next_dream_hint'].strip('"').strip("'")
-                dream_id = metadata.get('dream_id', dream_file.stem)
-                return hint, dream_id
-        except Exception:
-            continue
-
-    return None, None
+def _iter_dream_files(dreams_path, reverse=False):
+    if not dreams_path.exists():
+        return
+    dream_files = sorted(
+        (f for f in dreams_path.glob('dream-*.md')
+         if re.match(r'dream-\d{4}-\d{2}-\d{2}-\d+', f.stem)),
+        reverse=reverse,
+    )
+    yield from dream_files
 
 
 def get_dream_count(dreams_path):
-    dream_files = list(dreams_path.glob('dream-*.md'))
-    return len(dream_files)
+    return sum(1 for _ in _iter_dream_files(dreams_path))
 
 
 def weighted_random_choice(candidates, weights):
@@ -167,19 +159,29 @@ def weighted_random_choice(candidates, weights):
     return candidates[-1]
 
 
-def select_entry(log_dir, dreams_path, fields=None, debug=False):
+def _load_hint_candidates(candidates_path):
+    if not candidates_path or not candidates_path.exists():
+        return []
+    try:
+        with open(candidates_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            return []
+        return [item.get('file_path', '') for item in data if item.get('file_path')]
+    except Exception:
+        return []
+
+
+def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=False):
     stats_path = dreams_path / 'stats.yaml'
     stats = load_stats(stats_path)
     dream_count = get_dream_count(dreams_path)
-    hint, hint_source = get_latest_dream_hint(dreams_path)
 
     if debug:
         print(f"[DEBUG] 已有梦境次数: {dream_count}")
         print(f"[DEBUG] 统计文件中的记录数: {len(stats)}")
-        if hint:
-            print(f"[DEBUG] 续梦提示 (来自梦境 {hint_source}): {hint}")
-        else:
-            print(f"[DEBUG] 无续梦提示")
+        if hint_candidates:
+            print(f"[DEBUG] 续梦候选日志数: {len(hint_candidates)}")
 
     md_files = sorted(log_dir.rglob('*.md'))
     dreams_dir_files = set()
@@ -202,7 +204,7 @@ def select_entry(log_dir, dreams_path, fields=None, debug=False):
 
         rel_path_str = str(rel_path).replace('\\', '/')
 
-        if rel_path_str.startswith('dreams/') or rel_path_str == 'dream-shared.md':
+        if rel_path_str.startswith('dreams/'):
             continue
 
         try:
@@ -231,8 +233,8 @@ def select_entry(log_dir, dreams_path, fields=None, debug=False):
         })
 
     if not log_entries:
-        print("错误: 未找到任何日志文件")
-        return None
+        print("错误: 未找到任何日志文件", file=sys.stderr)
+        sys.exit(1)
 
     if debug:
         print(f"[DEBUG] 可选日志数量: {len(log_entries)}")
@@ -252,19 +254,11 @@ def select_entry(log_dir, dreams_path, fields=None, debug=False):
         low_visit_weights = [1.0 / (e['visit_count'] + 1) for e in low_visit_pool]
 
         hint_entries = []
-        if hint:
-            hint_lower = hint.lower()
-            for entry in log_entries:
-                meta = entry['metadata']
-                title = str(meta.get('title', '')).lower()
-                desc = str(meta.get('description', '')).lower()
-                tags = meta.get('tags', [])
-                tags_text = ' '.join(str(t).lower() for t in tags) if isinstance(tags, list) else str(tags).lower()
-                full_text = f"{title} {desc} {tags_text}"
-                if any(kw.strip() in full_text for kw in hint_lower.split() if len(kw.strip()) > 1):
-                    hint_entries.append(entry)
+        if hint_candidates:
+            candidate_set = set(hint_candidates)
+            hint_entries = [e for e in log_entries if e['path'] in candidate_set]
 
-        has_hint = hint and len(hint_entries) > 0
+        has_hint = len(hint_entries) > 0
 
         if has_hint:
             w_low = 0.4
@@ -281,7 +275,7 @@ def select_entry(log_dir, dreams_path, fields=None, debug=False):
             reason = f"偏向被梦到少的日志（被梦到 {selected['visit_count']} 次）"
         elif roll < w_low + w_hint:
             selected = random.choice(hint_entries)
-            reason = f"续梦提示引导（来自梦境 {hint_source}）: {hint}"
+            reason = "续梦候选引导"
         else:
             selected = random.choice(log_entries)
             reason = "随机探索"
@@ -300,8 +294,6 @@ def select_entry(log_dir, dreams_path, fields=None, debug=False):
         'entry_path': selected['path'],
         'reason': reason,
         'dream_count': dream_count + 1,
-        'hint': hint,
-        'hint_source': hint_source,
     }
 
     if fields:
@@ -319,6 +311,8 @@ def main():
                         help='日志目录路径（必需）')
     parser.add_argument('--dreams-path', type=str, required=True,
                         help='梦境目录路径（必需）')
+    parser.add_argument('--hint-candidates', type=str, default='',
+                        help='续梦候选日志的 JSON 文件路径（由 extract-log-metadata.py 生成），例如: --hint-candidates metadata-index.json')
     parser.add_argument('--fields', '-f', type=str, default='',
                         help='要输出的额外字段，逗号分隔，例如: --fields title,description,tags')
     parser.add_argument('--debug', '-d', action='store_true',
@@ -334,14 +328,15 @@ def main():
         dreams_path = Path.cwd() / dreams_path
 
     if not log_dir.exists():
-        print(f"错误: 日志目录不存在: {log_dir}")
-        return
+        print(f"错误: 日志目录不存在: {log_dir}", file=sys.stderr)
+        sys.exit(1)
 
     dreams_path.mkdir(parents=True, exist_ok=True)
 
     fields = [f.strip() for f in args.fields.split(',') if f.strip()] if args.fields else None
+    hint_candidates = _load_hint_candidates(Path(args.hint_candidates)) if args.hint_candidates else None
 
-    result = select_entry(log_dir, dreams_path, fields=fields, debug=args.debug)
+    result = select_entry(log_dir, dreams_path, hint_candidates=hint_candidates, fields=fields, debug=args.debug)
 
     if result:
         print("\n=== 做梦入口选择结果 ===")
@@ -352,11 +347,6 @@ def main():
         for key, value in result.items():
             if key.startswith('entry_') and key != 'entry_path':
                 print(f"  {key[6:]}: {value}")
-
-        if result.get('hint'):
-            print(f"\n续梦提示: {result['hint']}")
-        else:
-            print("\n无续梦提示")
     else:
         print("未能选择入口日志")
 
