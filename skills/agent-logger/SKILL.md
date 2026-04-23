@@ -99,7 +99,7 @@ language: "zh"  # or "en", etc.
 - **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use bidirectional wikilinks `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
   - **Uniqueness is required**: The link target must be uniquely identifiable. Generic names like `[[SKILL]]` or `[[README]]` are ambiguous when multiple skills/repos exist
   - **⚠️ CRITICAL: Always use the SHORTEST name that is globally unique**. Do NOT default to long namespace-prefixed names. Follow this decision order:
-    1. **Try filename only first** (shortest): `[[dream-entry-selector.py]]`, `[[prs.md]]`
+    1. **Try filename only first** (shortest): `[[dream-entry-selector.py]]`, `[[prs]]`
     2. **If not unique, add parent directory**: `[[log-memory-searcher/SKILL]]`, `[[gh-cli/references/prs]]`
     3. **If still not unique, add more levels until unique**: `[[agent-logger/skills/log-memory-searcher/SKILL]]`
     4. **Validation rule**: Always verify with `fd` after writing. If `fd` returns exactly 1 match, the name is good. If 0 or 2+, adjust.
@@ -108,7 +108,7 @@ language: "zh"  # or "en", etc.
     - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (standard wikilink convention)
     - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
   - Examples (ordered from preferred to acceptable):
-    - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]`, `[[prs.md]]`, `[[pr-reviews.md]]`
+    - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]`, `[[prs]]`, `[[pr-reviews]]`
     - ✅ **Good** (needs prefix for uniqueness): `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[weread-cli/utils]]`
     - ⚠️ **Acceptable but verbose** (only when shorter name is ambiguous): `[[agent-logger/skills/log-memory-searcher/SKILL]]`
     - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
