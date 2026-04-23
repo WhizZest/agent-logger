@@ -98,13 +98,22 @@ language: "zh"  # or "en", etc.
   - Use **descriptive labels**: `项目根目录的 package.json`, `agent-logger skill 的 SKILL.md`
 - **Use bidirectional links `[[]]` for cross-references, never `[]()`**: The standard markdown link syntax `[](path/to/file)` requires a real filesystem path and breaks when the target moves. Use bidirectional wikilinks `[[Topic Name]]` instead — they are purely semantic identifiers with no path dependency
   - **Uniqueness is required**: The link target must be uniquely identifiable. Generic names like `[[SKILL]]` or `[[README]]` are ambiguous when multiple skills/repos exist
+  - **⚠️ CRITICAL: Always use the SHORTEST name that is globally unique**. Do NOT default to long namespace-prefixed names. Follow this decision order:
+    1. **Try filename only first** (shortest): `[[dream-entry-selector.py]]`, `[[prs.md]]`
+    2. **If not unique, add parent directory**: `[[log-memory-searcher/SKILL]]`, `[[gh-cli/references/prs]]`
+    3. **If still not unique, add more levels until unique**: `[[agent-logger/skills/log-memory-searcher/SKILL]]`
+    4. **Validation rule**: Always verify with `fd` after writing. If `fd` returns exactly 1 match, the name is good. If 0 or 2+, adjust.
+  - **Why shortest?** Long paths are fragile (break on file moves), harder to read, and signal false precision. A wikilink is a semantic identifier, not a filesystem address.
   - **Suffix rules**:
     - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (standard wikilink convention)
     - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
-  - ✅ Good: `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[React Hooks Learning]]`, `[[weread-cli/utils]]`, `[[ollama-tool-call-demo.ts]]`, `[[formatDate function]]`
-  - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
-  - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets (use namespace-style like `[[gh-cli/SKILL]]`)
-  - ❌ Bad: `[[pr-reviews.md]]` — .md files should not include suffix
+  - Examples (ordered from preferred to acceptable):
+    - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]`, `[[prs.md]]`, `[[pr-reviews.md]]`
+    - ✅ **Good** (needs prefix for uniqueness): `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[weread-cli/utils]]`
+    - ⚠️ **Acceptable but verbose** (only when shorter name is ambiguous): `[[agent-logger/skills/log-memory-searcher/SKILL]]`
+    - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
+    - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets
+    - ❌ Bad: `[[log-memory-searcher/scripts/dream-entry-selector.py]]` — unnecessarily long when `[[dream-entry-selector.py]]` is already unique
 - **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026-04-13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
 - **Why this matters**: A log entry saying "fixed a bug in `src/utils/helpers.js`" is worthless when that path no longer exists. But "fixed a bug in the `formatDate()` function that caused timezone offset errors" remains useful forever, and the inline code snippet preserves the exact context
 
