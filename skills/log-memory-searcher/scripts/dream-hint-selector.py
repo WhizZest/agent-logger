@@ -8,11 +8,10 @@
     python dream-hint-selector.py --dreams-path <workspace>/.log/dreams/ --debug
 """
 
-import sys
 import argparse
 import random
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 try:
     import yaml
@@ -101,6 +100,21 @@ def load_hints(hints_path):
     return _parse_yaml_simple(content)
 
 
+def _normalize_last_used(hints):
+    for hint in hints:
+        last_used = hint.get('last_used')
+        if not last_used:
+            continue
+        dt = _parse_iso_datetime(last_used)
+        if dt is None:
+            continue
+        if dt.tzinfo is None:
+            dt = dt.astimezone()
+        normalized = dt.isoformat(timespec='seconds')
+        if hint['last_used'] != normalized:
+            hint['last_used'] = normalized
+
+
 def save_hints(hints_path, hints):
     hints_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -154,7 +168,7 @@ def compute_weight(hint, now):
         return float(priority)
 
     if last_dt.tzinfo is None:
-        last_dt = last_dt.replace(tzinfo=timezone.utc)
+        last_dt = last_dt.astimezone()
 
     elapsed_days = (now - last_dt).total_seconds() / 86400.0
     days_since_cooldown = max(0, elapsed_days - cooldown_days)
@@ -177,7 +191,7 @@ def is_in_cooldown(hint, now):
         return False
 
     if last_dt.tzinfo is None:
-        last_dt = last_dt.replace(tzinfo=timezone.utc)
+        last_dt = last_dt.astimezone()
 
     elapsed_days = (now - last_dt).total_seconds() / 86400.0
     return elapsed_days < cooldown_days
@@ -231,7 +245,7 @@ def select_hint(dreams_path, debug=False):
     total = sum(weights)
     r = random.uniform(0, total)
     cumulative = 0
-    selected = None
+    selected = candidates[-1]
 
     for candidate, weight in zip(candidates, weights):
         cumulative += weight
@@ -256,6 +270,7 @@ def select_hint(dreams_path, debug=False):
                 h['last_used'] = now.isoformat(timespec='seconds')
                 break
 
+    _normalize_last_used(hints)
     save_hints(hints_path, hints)
 
     return {'selected': selected}
