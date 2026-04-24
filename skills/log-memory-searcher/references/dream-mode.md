@@ -6,19 +6,34 @@
   - [目录](#目录)
   - [核心理念](#核心理念)
   - [目录结构](#目录结构)
+  - [入梦提示集](#入梦提示集)
+    - [提示类型](#提示类型)
+    - [数据格式](#数据格式)
+    - [字段说明](#字段说明)
+    - [选择算法](#选择算法)
+    - [维护方式](#维护方式)
+    - [创建规范](#创建规范)
   - [工作流程](#工作流程)
     - [第一步：前置检查](#第一步前置检查)
-    - [第二步：选择入口](#第二步选择入口)
-      - [情况 A：有续梦提示](#情况-a有续梦提示)
-      - [情况 B：无续梦提示（或搜索无结果）](#情况-b无续梦提示或搜索无结果)
-    - [第三步：自由联想游走](#第三步自由联想游走)
-    - [第四步：产出三种输出](#第四步产出三种输出)
+    - [第二步：选择入梦提示](#第二步选择入梦提示)
+    - [第三步：选择入口](#第三步选择入口)
+      - [情况 A：task 型提示](#情况-atask-型提示)
+      - [情况 B：perspective 型提示](#情况-bperspective-型提示)
+      - [情况 C：无提示](#情况-c无提示)
+    - [第四步：游走 / 分析](#第四步游走--分析)
+      - [task 型：系统性分析](#task-型系统性分析)
+      - [perspective 型：带视角的自由联想](#perspective-型带视角的自由联想)
+      - [无提示：纯自由联想](#无提示纯自由联想)
+    - [第五步：产出四种输出](#第五步产出四种输出)
       - [输出①：修改原始日志](#输出修改原始日志)
       - [输出②：更新共享梦境报告](#输出更新共享梦境报告)
       - [输出③：生成独立梦境报告](#输出生成独立梦境报告)
-    - [第五步：更新统计](#第五步更新统计)
+      - [输出④：追加续梦提示（可选）](#输出追加续梦提示可选)
+    - [第六步：更新统计](#第六步更新统计)
   - [做梦模式的约束](#做梦模式的约束)
-  - [dream-entry-selector.py 参数速查](#dream-entry-selectorpy-参数速查)
+  - [脚本参数速查](#脚本参数速查)
+    - [dream-hint-selector.py](#dream-hint-selectorpy)
+    - [dream-entry-selector.py](#dream-entry-selectorpy)
 
 ## 核心理念
 
@@ -28,6 +43,7 @@
 - **模式浮现**：在自由浏览中发现跨日志的隐藏规律
 - **碎片重组**：把不同时间、不同主题的日志拼出新的洞见
 - **可迭代的记忆**：每次做梦留下痕迹，影响下次做梦的方向
+- **入梦提示**：可复用的分析视角或结构化任务，让做梦不只是漫无目的地游走
 
 ## 目录结构
 
@@ -36,10 +52,105 @@
 ├── 2026-04-22/...                    ← 原始日志（不变，按日期扁平结构）
 ├── 2026-04-23/...
 ├── dreams/                           ← 做梦模式专属目录
+│   ├── dream-hints.yaml              ← 入梦提示集（可复用 + 一次性续梦提示）
 │   ├── stats.yaml                    ← 统计文件（只记录被梦到过的日志）
 │   ├── dream-shared.md               ← 共享梦境报告（跨梦境迭代）
 │   ├── dream-2026-04-22-1.md         ← 独立梦境报告
 │   └── dream-2026-04-23-1.md         ← 独立梦境报告
+```
+
+## 入梦提示集
+
+入梦提示集存放在 `<workspace>/.log/dreams/dream-hints.yaml`，统一管理所有入梦提示，包括可复用的持久提示和一次性的续梦提示。
+
+### 提示类型
+
+| 类型 | 说明 | 游走方式 |
+|------|------|----------|
+| `task` | 结构化分析，暗含工作流程 | 系统性遍历搜索结果 |
+| `perspective` | 自由联想 + 视角 | 自由游走，关注提示主题 |
+
+### 数据格式
+
+```yaml
+hints:
+  - id: error-recurrence
+    type: task
+    description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
+    cooldown_days: 7
+    priority: 3
+    last_used: null
+
+  - id: duplicate-learning
+    type: task
+    description: "检索所有 learning 日志，看是否有重复学习"
+    cooldown_days: 14
+    priority: 2
+    last_used: "2026-04-20T08:00:00+08:00"
+
+  - id: focus-performance
+    type: perspective
+    description: "游走时关注性能相关的内容和模式"
+    cooldown_days: 3
+    priority: 1
+    last_used: null
+
+  - id: continue-db-optimization
+    type: perspective
+    description: "继续探索数据库优化和日志压缩的关联"
+    cooldown_days: 0
+    priority: 3
+    last_used: null
+    disposable: true
+```
+
+### 字段说明
+
+| 字段 | 必需 | 说明 |
+|------|------|------|
+| `id` | 是 | 唯一标识，小写字母 + 连字符（如 `error-recurrence`） |
+| `type` | 是 | `task` 或 `perspective` |
+| `description` | 是 | 提示内容，自然语言描述 |
+| `cooldown_days` | 是 | 冷却天数，0 表示无冷却 |
+| `priority` | 是 | 优先级数值，正整数，推荐 1-3 |
+| `last_used` | 是 | 上次使用时间（ISO 8601），null 表示未使用过 |
+| `disposable` | 否 | 默认 false。true 表示用一次后自动删除（即续梦提示） |
+
+### 选择算法
+
+1. **过滤**：排除冷却期内的提示
+2. **计算权重**：
+   - `cooldown_days > 0`：`weight = priority × (1 + days_since_cooldown / cooldown_days)`
+     - `last_used` 为 null 时：`days_since_cooldown = cooldown_days`（相当于刚过冷却期）
+   - `cooldown_days == 0`（disposable 提示）：`weight = priority`（常数）
+   - "无提示"选项：固定权重 = 2
+3. **按权重随机选择**
+4. **更新状态**：选中提示的 `last_used` 更新为当前时间；`disposable: true` 的提示自动删除
+
+### 维护方式
+
+- **手动编辑**：用户可直接编辑 `dream-hints.yaml`
+- **通过 Agent**：用户说"添加一个入梦提示"、"管理入梦提示"等，Agent 负责编辑文件
+- **做梦产出**：做梦过程中如果有续梦意图，自动追加 `disposable: true` 的提示
+
+### 创建规范
+
+当 `dream-hints.yaml` 不存在时，`dream-hint-selector.py` 直接输出"无提示"。首次创建文件格式：
+
+```yaml
+hints: []
+```
+
+或包含初始提示：
+
+```yaml
+hints:
+  - id: error-recurrence
+    type: task
+    description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
+    cooldown_days: 7
+    priority: 3
+    last_used: null
 ```
 
 ## 工作流程
@@ -55,26 +166,54 @@ git status --short
 - 如果有未提交的修改 → **提醒用户先提交**，因为做梦模式会修改原始日志
 - 如果工作区干净 → 继续下一步
 
-### 第二步：选择入口
+### 第二步：选择入梦提示
 
-1. **检查续梦提示**：Agent 查看 `<workspace>/.log/dreams/` 下最新的梦境报告，读取其 `next_dream_hint` 字段
-2. 根据是否有续梦提示，选择对应流程：
+运行入梦提示选择器：
 
-#### 情况 A：有续梦提示
+```bash
+python <skill_dir>/scripts/dream-hint-selector.py \
+  --dreams-path <workspace>/.log/dreams/
+```
 
-1. **Agent 提取关键词**：从 `next_dream_hint` 中提取有意义的关键词。例如续梦提示为"继续探索数据库优化和日志压缩的关联"，Agent 应提取关键词：`数据库`、`优化`、`日志压缩`
-2. **搜索候选日志**：调用 `extract-log-metadata.py` 搜索匹配的日志：
+脚本输出：
+- **选中提示**：提示ID、类型（task/perspective）、描述
+- **无提示**：自由联想
+
+### 第三步：选择入口
+
+根据第二步的结果，选择对应流程：
+
+#### 情况 A：task 型提示
+
+1. **Agent 从提示中提取搜索条件**：例如提示"检索所有 error 日志"，Agent 提取关键词 `error`
+2. **搜索相关日志**：
 
 ```bash
 python <skill_dir>/scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
-  --search "数据库|优化|日志压缩" \
+  --search "error" \
   --fields file_path \
   --format json \
   --limit 0
 ```
 
-3. **选择入口**：将搜索结果传给 `dream-entry-selector.py`：
+3. **系统性遍历搜索结果**（不需要 `dream-entry-selector.py`）
+
+#### 情况 B：perspective 型提示
+
+1. **Agent 从提示中提取关键词**：例如提示"关注性能相关的内容"，Agent 提取关键词 `性能|performance|优化`
+2. **搜索候选日志**：
+
+```bash
+python <skill_dir>/scripts/extract-log-metadata.py \
+  --path <workspace>/.log/ \
+  --search "性能|performance|优化" \
+  --fields file_path \
+  --format json \
+  --limit 0
+```
+
+3. **选择入口**：
 
 ```bash
 python <skill_dir>/scripts/dream-entry-selector.py \
@@ -84,11 +223,9 @@ python <skill_dir>/scripts/dream-entry-selector.py \
   --fields title,description,tags
 ```
 
-**⚠️ 如果搜索结果为 0 或脚本报错**：Agent 可以调整关键词重试，或者省略 `--hint-candidates` 直接进入情况 B。
+#### 情况 C：无提示
 
-#### 情况 B：无续梦提示（或搜索无结果）
-
-直接运行入口选择脚本，无需候选列表：
+直接运行入口选择脚本：
 
 ```bash
 python <skill_dir>/scripts/dream-entry-selector.py \
@@ -97,11 +234,6 @@ python <skill_dir>/scripts/dream-entry-selector.py \
   --fields title,description,tags
 ```
 
-脚本会输出：
-- **入口日志**：推荐的起始日志路径
-- **选择理由**：为什么选这个入口
-- **梦境编号**：当前是第几次做梦
-
 入口选择算法：
 - **首次做梦**：100% 随机选择
 - **有统计但无续梦候选**：40% 偏向被梦到少的 + 60% 随机
@@ -109,28 +241,39 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 
 偏向"被梦到少"的具体实现：取 visit_count 最低的前 20% 日志，使用逆权重采样（权重 = 1/(visit_count+1)），次数越少概率越高。
 
-### 第三步：自由联想游走
+### 第四步：游走 / 分析
 
-从入口日志开始，在日志间自由联想游走：
+根据提示类型，采用不同的游走方式：
 
-1. **读取当前日志**：理解其内容、标签、wikilink
-2. **选择下一步方向**：
+#### task 型：系统性分析
+
+1. 按顺序遍历第三步搜索到的日志
+2. 针对提示描述的分析任务，逐条提取相关信息
+3. 汇总分析结果，形成结论
+
+#### perspective 型：带视角的自由联想
+
+1. 从入口日志开始，在日志间自由联想游走
+2. 游走时额外关注与提示主题相关的内容
+3. 发现与提示主题相关的关联时优先追踪
+
+#### 无提示：纯自由联想
+
+1. 从入口日志开始，在日志间自由联想游走
+2. 选择下一步方向：
    - 当前日志中的 wikilink → 跳转到关联日志
    - 标签相似度 → 跳转到有相似标签的其他日志
    - 做梦统计偏向 → 偏向被梦到少的日志
-3. **收集沿途发现**：
-   - 跨日志的隐藏关联
-   - 反复出现的主题/模式
-   - 值得提炼的原则或经验
-   - 用户偏好的蛛丝马迹
-4. **评估是否继续**：
-   - 至少走 3-5 步，避免太浅
-   - 当前路径是否还在产生新洞见？如果连续几步都是已知信息，考虑换方向或结束
-   - 是否有足够的收获来形成有深度的报告？
+3. 收集沿途发现
+
+**通用规则**：
+- 至少走 3-5 步，避免太浅
+- 当前路径是否还在产生新洞见？如果连续几步都是已知信息，考虑换方向或结束
+- 是否有足够的收获来形成有深度的报告？
 
 ⚠️ **游走范围**：path_visited 不限于日志文件，也可能经过代码文件、配置文件等非日志文档。但非日志文档不参与统计，一般不修改，如有修改建议写入独立梦境报告。
 
-### 第四步：产出三种输出
+### 第五步：产出四种输出
 
 #### 输出①：修改原始日志
 
@@ -218,11 +361,12 @@ type: dream
 created: <当前时间>
 dream_id: <梦境编号>
 entry_log: <入口日志路径>
+hint_id: <入梦提示ID，无提示则为 null>
+hint_type: <task/perspective/null>
 path_visited:
   - "<路径1>"
   - "<路径2>"
   - "<路径3>"
-next_dream_hint: "<给下次做梦的提示>"
 ---
 
 # 梦境报告 #<编号>
@@ -253,12 +397,34 @@ next_dream_hint: "<给下次做梦的提示>"
 - 可提炼为新 skill：...
 - 可更新现有 skill：...
 
-## 给下次做梦的提示
+## 续梦意图（可选）
 
-- ...
+如果有续梦意图，将自动追加到入梦提示集（dream-hints.yaml）中。无续梦意图则省略此节。
+- 续梦描述：...
 ```
 
-### 第五步：更新统计
+#### 输出④：追加续梦提示（可选）
+
+⚠️ 本步骤是可选的，仅在做梦过程中确实产生了续梦意图时执行。
+
+如果做梦过程中产生了续梦意图，追加一条 `disposable: true` 的提示到 `dream-hints.yaml`：
+
+1. 读取 `dream-hints.yaml`
+2. 追加新提示：
+```yaml
+  - id: continue-<简短描述>
+    type: perspective
+    description: "<续梦描述>"
+    cooldown_days: 0
+    priority: 3
+    last_used: null
+    disposable: true
+```
+3. 保存文件
+
+⚠️ 续梦提示的 `priority` 由 Agent 根据实际情况灵活决定，`cooldown_days` 固定为 0。
+
+### 第六步：更新统计
 
 入口选择脚本已自动更新 `stats.yaml`。如果在游走过程中访问了其他日志，也需要手动更新统计：
 
@@ -279,7 +445,20 @@ next_dream_hint: "<给下次做梦的提示>"
 6. **last_accessed 不因做梦而更新**：做梦的统计使用独立的 `stats.yaml`，不污染原始日志的 `last_accessed` 字段
 7. **原始日志受 Git 保护**：做梦前检查 Git 状态，有未提交修改则提醒用户先提交
 
-## dream-entry-selector.py 参数速查
+## 脚本参数速查
+
+### dream-hint-selector.py
+
+```bash
+# 必需参数
+--dreams-path       梦境目录路径（必需）
+
+# 可选参数
+--debug, -d         显示详细调试信息
+--help              显示帮助信息
+```
+
+### dream-entry-selector.py
 
 ```bash
 # 必需参数

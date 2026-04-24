@@ -280,7 +280,7 @@ def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=
             selected = random.choice(log_entries)
             reason = "随机探索"
 
-    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    now = datetime.now().astimezone().isoformat(timespec='seconds')
     if selected['path'] not in stats:
         stats[selected['path']] = {}
     stats[selected['path']]['visit_count'] = str(selected['visit_count'] + 1)
