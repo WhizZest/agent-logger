@@ -107,9 +107,13 @@ language: "zh"  # or "en", etc.
   - **Suffix rules**:
     - `.md` files: **No suffix needed** — `[[agent-logger/SKILL]]` links to `agent-logger/SKILL.md` (standard wikilink convention)
     - Non-md files: **Keep the suffix** — `[[ollama-tool-call-demo.ts]]`, `[[package.json]]` to distinguish file types
+  - **Description required**: Every wikilink must be followed by a brief text description explaining the relationship or context. A bare `[[link]]` without explanation is insufficient — the reader cannot understand why the link is relevant without following it
+    - ✅ Good: `[[dream-entry-selector.py]]：本次新增的入梦提示选择脚本`
+    - ✅ Good: `[[agent-logger/SKILL]]：日志记录规范，定义了 wikilink 用法`
+    - ❌ Bad: `[[dream-entry-selector.py]]` — no description, unclear why it's linked
   - Examples (ordered from preferred to acceptable):
-    - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]`, `[[prs]]`, `[[pr-reviews]]`
-    - ✅ **Good** (needs prefix for uniqueness): `[[gh-cli/SKILL]]`, `[[agent-logger/SKILL]]`, `[[weread-cli/utils]]`
+    - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]：入梦提示选择脚本`, `[[prs]]：PR 工作流参考`, `[[pr-reviews]]：PR 审查参考`
+    - ✅ **Good** (needs prefix for uniqueness): `[[gh-cli/SKILL]]：GitHub CLI skill`, `[[agent-logger/SKILL]]：日志记录 skill`, `[[weread-cli/utils]]：微信读书工具函数`
     - ⚠️ **Acceptable but verbose** (only when shorter name is ambiguous): `[[agent-logger/skills/log-memory-searcher/SKILL]]`
     - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
     - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets
@@ -176,11 +180,13 @@ useEffect(() => {
 
 ## 相关主题
 
-- [[React Components]]
-- [[State Management]]
+- [[React Components]]：组件化开发基础
+- [[State Management]]：状态管理方案
 ````
 
 ## Log Types
+
+The following are common type references, but not limited to — you can define new types as needed:
 
 | Type | Description | Use When |
 |------|-------------|----------|
