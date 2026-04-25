@@ -43,17 +43,21 @@ def _parse_yaml_simple(content):
         if not line.startswith('  - ') and line.strip() and not line.startswith(' '):
             break
 
-        if line.strip().startswith('- description:'):
+        if line.strip().startswith('- ') and ':' in line:
             hint = {}
-            val = line.split(':', 1)[1].strip().strip('"').strip("'")
-            hint['description'] = val
+            first_key = line.strip()[2:].split(':', 1)[0].strip()
+            first_val = line.strip()[2:].split(':', 1)[1].strip().strip('"').strip("'")
+            hint[first_key] = first_val
             i += 1
             while i < len(lines):
                 sub = lines[i]
-                if sub.strip().startswith('- description:') or (sub and not sub.startswith('    ') and sub.strip()):
+                if (sub.strip().startswith('- ') and ':' in sub) or (sub and not sub.startswith('    ') and sub.strip()):
                     break
                 if ':' in sub:
                     key = sub.strip().split(':', 1)[0].strip()
+                    if key == 'description':
+                        i += 1
+                        continue
                     val = sub.strip().split(':', 1)[1].strip().strip('"').strip("'")
                     if key == 'cooldown_days':
                         try:
@@ -121,7 +125,8 @@ def save_hints(hints_path, hints):
 
     lines = ['hints:']
     for hint in hints:
-        lines.append(f'  - description: "{hint.get("description", "")}"')
+        desc = hint.get('description', '').replace('"', '\\"')
+        lines.append(f'  - description: "{desc}"')
         lines.append(f'    type: {hint.get("type", "perspective")}')
         lines.append(f'    cooldown_days: {hint.get("cooldown_days", 0)}')
         lines.append(f'    priority: {hint.get("priority", 1)}')
