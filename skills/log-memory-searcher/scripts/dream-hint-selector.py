@@ -43,13 +43,14 @@ def _parse_yaml_simple(content):
         if not line.startswith('  - ') and line.strip() and not line.startswith(' '):
             break
 
-        if line.strip().startswith('- id:'):
+        if line.strip().startswith('- description:'):
             hint = {}
-            hint['id'] = line.split(':', 1)[1].strip().strip('"').strip("'")
+            val = line.split(':', 1)[1].strip().strip('"').strip("'")
+            hint['description'] = val
             i += 1
             while i < len(lines):
                 sub = lines[i]
-                if sub.strip().startswith('- id:') or (sub and not sub.startswith('    ') and sub.strip()):
+                if sub.strip().startswith('- description:') or (sub and not sub.startswith('    ') and sub.strip()):
                     break
                 if ':' in sub:
                     key = sub.strip().split(':', 1)[0].strip()
@@ -71,7 +72,7 @@ def _parse_yaml_simple(content):
                             val = None
                     hint[key] = val
                 i += 1
-            if 'id' in hint:
+            if 'description' in hint:
                 hints.append(hint)
         else:
             i += 1
@@ -120,9 +121,8 @@ def save_hints(hints_path, hints):
 
     lines = ['hints:']
     for hint in hints:
-        lines.append(f'  - id: {hint["id"]}')
+        lines.append(f'  - description: "{hint.get("description", "")}"')
         lines.append(f'    type: {hint.get("type", "perspective")}')
-        lines.append(f'    description: "{hint.get("description", "")}"')
         lines.append(f'    cooldown_days: {hint.get("cooldown_days", 0)}')
         lines.append(f'    priority: {hint.get("priority", 1)}')
         last_used = hint.get('last_used')
@@ -216,7 +216,7 @@ def select_hint(dreams_path, debug=False):
         if not is_in_cooldown(hint, now):
             available.append(hint)
         elif debug:
-            print(f"[DEBUG] 冷却中: {hint.get('id')} (cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
+            print(f"[DEBUG] 冷却中: {hint.get('description')} (cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
 
     if debug:
         print(f"[DEBUG] 可用提示数: {len(available)} / {len(hints)}")
@@ -234,7 +234,7 @@ def select_hint(dreams_path, debug=False):
         candidates.append(hint)
         weights.append(w)
         if debug:
-            print(f"[DEBUG] 提示 {hint.get('id')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
+            print(f"[DEBUG] 提示 {hint.get('description')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
 
     candidates.append(None)
     weights.append(NO_HINT_WEIGHT)
@@ -261,12 +261,12 @@ def select_hint(dreams_path, debug=False):
     selected['last_used'] = now.isoformat(timespec='seconds')
 
     if selected.get('disposable', False):
-        hints = [h for h in hints if h.get('id') != selected['id']]
+        hints = [h for h in hints if h.get('description') != selected['description']]
         if debug:
-            print(f"[DEBUG] 已删除一次性提示: {selected.get('id')}")
+            print(f"[DEBUG] 已删除一次性提示: {selected.get('description')}")
     else:
         for h in hints:
-            if h.get('id') == selected.get('id'):
+            if h.get('description') == selected.get('description'):
                 h['last_used'] = now.isoformat(timespec='seconds')
                 break
 
@@ -297,9 +297,8 @@ def main():
     if selected is None:
         print("无提示：自由联想")
     else:
-        print(f"提示ID: {selected.get('id')}")
-        print(f"类型: {selected.get('type')}")
         print(f"描述: {selected.get('description')}")
+        print(f"类型: {selected.get('type')}")
         if selected.get('disposable'):
             print("一次性: 是（已从提示集中删除）")
 
