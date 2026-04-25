@@ -74,29 +74,25 @@
 
 ```yaml
 hints:
-  - id: error-recurrence
-    type: task
+  - type: task
     description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
     cooldown_days: 7
     priority: 3
     last_used: null
 
-  - id: duplicate-learning
-    type: task
+  - type: task
     description: "检索所有 learning 日志，看是否有重复学习"
     cooldown_days: 14
     priority: 2
     last_used: "2026-04-20T08:00:00+08:00"
 
-  - id: focus-performance
-    type: perspective
+  - type: perspective
     description: "游走时关注性能相关的内容和模式"
     cooldown_days: 3
     priority: 1
     last_used: null
 
-  - id: continue-db-optimization
-    type: perspective
+  - type: perspective
     description: "继续探索数据库优化和日志压缩的关联"
     cooldown_days: 0
     priority: 3
@@ -108,9 +104,8 @@ hints:
 
 | 字段 | 必需 | 说明 |
 |------|------|------|
-| `id` | 是 | 唯一标识，小写字母 + 连字符（如 `error-recurrence`） |
 | `type` | 是 | `task` 或 `perspective` |
-| `description` | 是 | 提示内容，自然语言描述 |
+| `description` | 是 | 提示内容，自然语言描述，同时作为唯一标识 |
 | `cooldown_days` | 是 | 冷却天数，0 表示无冷却 |
 | `priority` | 是 | 优先级数值，正整数，推荐 1-3 |
 | `last_used` | 是 | 上次使用时间（ISO 8601），null 表示未使用过 |
@@ -145,8 +140,7 @@ hints: []
 
 ```yaml
 hints:
-  - id: error-recurrence
-    type: task
+  - type: task
     description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
     cooldown_days: 7
     priority: 3
@@ -176,7 +170,7 @@ python <skill_dir>/scripts/dream-hint-selector.py \
 ```
 
 脚本输出：
-- **选中提示**：提示ID、类型（task/perspective）、描述
+- **选中提示**：描述、类型（task/perspective）
 - **无提示**：自由联想
 
 ### 第三步：选择入口
@@ -361,7 +355,7 @@ type: dream
 created: <当前时间>
 dream_id: <梦境编号>
 entry_log: <入口日志路径>
-hint_id: <入梦提示ID，无提示则为 null>
+hint_description: <入梦提示描述，无提示则为 null>
 hint_type: <task/perspective/null>
 path_visited:
   - "<路径1>"
@@ -412,8 +406,7 @@ path_visited:
 1. 读取 `dream-hints.yaml`
 2. 追加新提示：
 ```yaml
-  - id: continue-<简短描述>
-    type: perspective
+  - type: perspective
     description: "<续梦描述>"
     cooldown_days: 0
     priority: 3
