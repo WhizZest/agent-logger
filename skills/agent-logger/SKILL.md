@@ -180,8 +180,8 @@ useEffect(() => {
 
 ## 相关主题
 
-- [[React Components]]
-- [[State Management]]
+- [[React Components]]：组件化开发基础
+- [[State Management]]：状态管理方案
 ````
 
 ## Log Types
