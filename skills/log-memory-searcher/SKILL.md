@@ -123,10 +123,10 @@ python <skill_dir>/scripts/extract-log-metadata.py \
    >    # 正则安全：若链接目标含正则元字符（. ( ) [ ] + ?），需用 \ 转义（实践中 wikilink 目标很少包含这些字符）
    >
    >    # Windows（路径分隔符用 \\）：
-   >    fd -p "path\\to\\file.md$" <workspace> --hidden --max-results 5
+   >    fd -p "path\\to\\file.md$" <workspace> --hidden --no-ignore --max-results 5
    >
    >    # Linux / macOS（路径分隔符用 /）：
-   >    fd -p "path/to/file.md$" <workspace> --hidden --max-results 5
+   >    fd -p "path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
    >    ```
    > 3. **根据结果自然分流**：
    >    - **0 匹配** → 目标文件不存在，可能是概念/主题型前向引用，跳过该链接 ❌
