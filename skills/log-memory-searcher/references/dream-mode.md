@@ -295,6 +295,14 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 - 如果 description 为空或不准确 → 值得补充更新
 - 如果标题已足够说明日志内容 → 不需要 description
 
+**合规性检查**：对照 [[agent-logger/SKILL|agent-logger skill]] 的当前规范，检查本次游走路径中访问到的日志是否合规，不合规的按新规范修改。常见检查项：
+- frontmatter 格式和字段完整性
+- wikilink 是否有描述
+- 是否使用了文件路径而非 wikilink
+- 标签格式是否规范
+- 是否混入敏感信息
+- 是否违反单主题原则
+
 #### 输出②：更新或创建 AGENTS.md
 
 `AGENTS.md` 存放在 workspace 根目录，是 Agent 的上下文输入文件。内容必须精炼、准确、泛用——每条信息对 Agent 都有实际指导意义，不应有多余文本。
