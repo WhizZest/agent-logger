@@ -222,14 +222,12 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 4. **游走 / 分析**：task 型系统性遍历；perspective 型带视角自由联想；无提示纯自由联想
 5. **产出四种输出**：
    - ① 修改原始日志（添加带关系类型的 wikilink、补充 description）
-   - ② 更新 AGENTS.md（workspace 根目录，跨梦境迭代，保持精炼）
+   - ② 更新 AGENTS.md（可选，workspace 根目录，跨梦境迭代，保持精炼）
    - ③ 生成独立梦境报告（单次梦境产出）
    - ④ 追加续梦提示到入梦提示集（可选，仅在做梦过程中确实产生了续梦意图时执行）
 6. **更新统计**：更新 `stats.yaml` 中沿途日志的 visit_count
 
-**关键约束**：wikilink 必须标注具体关系类型（否则不写入）；偏好与最佳实践冲突时以最佳实践优先；last_accessed 不因做梦而随意更新，仍需遵循"用进废退"原则。
-
-📖 **完整工作流程、输出模板、关系类型参考表、约束详情**：见 [references/dream-mode.md](references/dream-mode.md)
+📖 **完整工作流程、输出模板、关系类型参考表、约束详情**：见 [[references/dream-mode.md]]
 
 ---
 
