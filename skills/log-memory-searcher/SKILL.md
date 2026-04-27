@@ -120,13 +120,11 @@ python <skill_dir>/scripts/extract-log-metadata.py \
    >    # 将 [[path/to/file]] 转为 fd 模式
    >    # .md 文件：追加 .md$ 锚定到文件名末尾
    >    # 非 .md 文件：保留原后缀 + $
+   >    # 路径分隔符用 (\\|/) 替代，跨平台兼容（匹配 \ 和 /）
+   >    # 文件名前必须加 (\\|/) 锚定，避免误匹配（如 [[dream-mode]] 不应匹配 pr-dream-mode.md）
    >    # 正则安全：若链接目标含正则元字符（. ( ) [ ] + ?），需用 \ 转义（实践中 wikilink 目标很少包含这些字符）
    >
-   >    # Windows（路径分隔符用 \\）：
-   >    fd -p "path\\to\\file.md$" <workspace> --hidden --no-ignore --max-results 5
-   >
-   >    # Linux / macOS（路径分隔符用 /）：
-   >    fd -p "path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
+   >    fd -p "(\\|/)path(\\|/)to(\\|/)file.md$" <workspace> --hidden --no-ignore --max-results 5
    >    ```
    > 3. **根据结果自然分流**：
    >    - **0 匹配** → 目标文件不存在，可能是概念/主题型前向引用，跳过该链接 ❌
