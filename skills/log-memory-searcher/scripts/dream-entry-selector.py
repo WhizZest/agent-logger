@@ -83,7 +83,7 @@ def extract_yaml_frontmatter(content):
     return metadata
 
 
-def update_frontmatter_field(file_path, field_name, field_value):
+def update_frontmatter_fields(file_path, fields):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -96,11 +96,12 @@ def update_frontmatter_field(file_path, field_name, field_value):
     closing = frontmatter_match.group(3)
     body = content[frontmatter_match.end():]
 
-    field_pattern = re.compile(r'^(' + re.escape(field_name) + r':\s*).*$', re.MULTILINE)
-    if field_pattern.search(yaml_content):
-        yaml_content = field_pattern.sub(r'\g<1>' + field_value, yaml_content)
-    else:
-        yaml_content = yaml_content.rstrip('\n') + '\n' + field_name + ': ' + field_value + '\n'
+    for field_name, field_value in fields:
+        field_pattern = re.compile(r'^(' + re.escape(field_name) + r':\s*).*$', re.MULTILINE)
+        if field_pattern.search(yaml_content):
+            yaml_content = field_pattern.sub(r'\g<1>' + field_value, yaml_content)
+        else:
+            yaml_content = yaml_content.rstrip('\n') + '\n' + field_name + ': ' + field_value
 
     new_content = opening + yaml_content + closing + body
 
@@ -261,8 +262,10 @@ def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=
     now = datetime.now().astimezone().isoformat(timespec='seconds')
     new_count = selected['visit_count'] + 1
     if not dry_run:
-        update_frontmatter_field(selected['abs_path'], 'dream_visit_count', str(new_count))
-        update_frontmatter_field(selected['abs_path'], 'last_dreamed', f'"{now}"')
+        update_frontmatter_fields(selected['abs_path'], [
+            ('dream_visit_count', str(new_count)),
+            ('last_dreamed', f'"{now}"'),
+        ])
 
     if debug:
         if dry_run:
