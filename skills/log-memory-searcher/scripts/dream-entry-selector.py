@@ -133,8 +133,8 @@ def _iter_dream_files(dreams_path, reverse=False):
     if not dreams_path.exists():
         return
     dream_files = sorted(
-        (f for f in dreams_path.glob('dream-*.md')
-         if re.match(r'dream-\d{4}-\d{2}-\d{2}-\d+', f.stem)),
+        (f for f in dreams_path.rglob('dream-*.md')
+         if re.match(r'dream-\d+', f.stem)),
         reverse=reverse,
     )
     yield from dream_files
