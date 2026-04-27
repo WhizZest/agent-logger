@@ -25,14 +25,14 @@ Invoke this skill in these scenarios:
 - Format example: `2026-03-18T20:56:00+08:00`
 
 ### Step 2: Create Log Directory
-- Check if `<workspace>/.log/<yyyy-MM-dd>/` exists
-- If not, create the directory structure
+- Check if `<workspace>/.log/<yyyy>/<MM>/<dd>/` exists
+- If not, create the directory structure (year/month/day nested directories)
 - `<workspace>` is the root directory of project workspace
 
 ### Step 3: Generate Log File
 - Create markdown file in the date directory
-- File naming format: `<yyyy-MM-dd>-<topic>.md`
-- Example: `2026-03-18-completed-task.md`
+- File naming format: `log-<topic>.md`
+- Example: `log-completed-task.md`
 
 ## Log File Structure
 
@@ -118,7 +118,7 @@ language: "zh"  # or "en", etc.
     - ❌ Bad: `[SKILL.md](../../skills/agent-logger/SKILL.md)`, `[helpers.js](src/utils/helpers.js)` — uses file paths
     - ❌ Bad: `[[SKILL]]`, `[[README]]`, `[[utils]]` — not unique, ambiguous targets
     - ❌ Bad: `[[log-memory-searcher/scripts/dream-entry-selector.py]]` — unnecessarily long when `[[dream-entry-selector.py]]` is already unique
-- **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026-04-13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
+- **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026/04/13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
 - **Why this matters**: A log entry saying "fixed a bug in `src/utils/helpers.js`" is worthless when that path no longer exists. But "fixed a bug in the `formatDate()` function that caused timezone offset errors" remains useful forever, and the inline code snippet preserves the exact context
 
 ### Knowledge Graph Friendly Syntax
@@ -216,12 +216,14 @@ After writing a log, manually check **file-reference** bidirectional links using
 
 ```bash
 # Check a wikilink: convert [[path/to/file]] to fd pattern
-fd -p "path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
+# IMPORTANT: Use path separator anchor (\\|/) to avoid false positives (e.g., [[dream-mode]] should not match pr-dream-mode.md)
+# (\\|/) is cross-platform: matches \ on Windows and / on Linux/macOS
+fd -p "(\\|/)path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
 
-# Examples (Windows use \\, Linux/macOS use /):
-# [[gh-cli/SKILL]]              →  fd -p "gh-cli\\SKILL.md$" <workspace> --hidden --no-ignore --max-results 5      (Windows)
-#                                   fd -p "gh-cli/SKILL.md$" <workspace> --hidden --no-ignore --max-results 5         (Linux/macOS)
-# [[ollama-tool-call-demo.ts]]  →  fd -p "ollama-tool-call-demo.ts$" <workspace> --hidden --no-ignore --max-results 5
+# Examples:
+# [[gh-cli/SKILL]]              →  fd -p "(\\|/)gh-cli(\\|/)SKILL.md$" <workspace> --hidden --no-ignore --max-results 5
+# [[ollama-tool-call-demo.ts]]  →  fd -p "(\\|/)ollama-tool-call-demo.ts$" <workspace> --hidden --no-ignore --max-results 5
+# [[dream-mode]]                →  fd -p "(\\|/)dream-mode.md$" <workspace> --hidden --no-ignore --max-results 5
 # [[Topic Name]]                →  SKIP (concept link, no file required)
 ```
 
@@ -236,7 +238,8 @@ fd -p "path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
 - **Linux**: check package manager for `fd-find` or download from GitHub releases
 
 **Pattern rules**:
-- Replace `/` with OS path separator: `\\` on Windows, `/` on Linux/macOS
+- **Always add path separator anchor `(\\|/)` before the filename** to avoid false positives (e.g., `dream-mode.md$` would match `pr-dream-mode.md`; `(\\|/)dream-mode.md$` won't). This is cross-platform: matches `\` on Windows and `/` on Linux/macOS
+- Replace `/` in wikilink path with `(\\|/)` for cross-platform compatibility
 - `.md` files: append `.md$` to the pattern (anchor to filename end, excludes `.bak`, `.old` etc.)
 - Non-`.md` files: keep original suffix + `$`
 - Always use `--max-results 5` to limit output
@@ -247,7 +250,7 @@ fd -p "path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
 ## Implementation Notes
 
 - All logs are stored in `<workspace>/.log/` directory
-- Each day gets its own subdirectory
-- Files are named with date prefix for easy sorting
+- Each day gets its own nested directory: `<year>/<month>/<day>/`
+- Files are named with `log-` prefix for easy identification
 - Use absolute paths when creating directories and files
 - Ensure proper error handling for file operations
