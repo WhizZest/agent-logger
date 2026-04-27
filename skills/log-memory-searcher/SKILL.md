@@ -223,7 +223,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
    - ② 更新 AGENTS.md（可选，workspace 根目录，跨梦境迭代，保持精炼）
    - ③ 生成独立梦境报告（单次梦境产出）
    - ④ 追加续梦提示到入梦提示集（可选，仅在做梦过程中确实产生了续梦意图时执行）
-6. **更新统计**：更新 `stats.yaml` 中沿途日志的 visit_count
+6. **更新统计**：更新沿途日志 front matter 中的 `dream_visit_count` 和 `last_dreamed`
 
 📖 **完整工作流程、输出模板、关系类型参考表、约束详情**：见 [[references/dream-mode.md]]
 
