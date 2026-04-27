@@ -41,7 +41,8 @@ Invoke this skill in these scenarios:
 ---
 title: "Topic Title" # Always use English for title
 created: "2026-03-18T20:56:00+08:00"
-type: "log"  # or "learning", "error", "reflection"
+type: "log"  # or "learning", "error", "reflection", etc.
+author: "GLM-5.1 + Trae"  # AI Model + Agent Platform/Tool
 tags: ["#tag1", "#tag2", "#tag3"] # Use graph-compatible tags
 language: "zh"  # or "en", etc.
 ---
@@ -146,6 +147,7 @@ Use markdown syntax that supports knowledge graph generation:
 title: "Learned about React Hooks"
 created: "2026-03-18T20:56:00+08:00"
 type: "learning"
+author: "GLM-5.1 + Trae"
 tags: ["#React", "#Hooks", "#frontend", "#react", "#hooks"]
 language: "zh"
 ---
