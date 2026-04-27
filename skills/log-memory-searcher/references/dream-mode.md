@@ -62,9 +62,9 @@
 │       └── 2026/                    ← 梦境报告（年/月/日 三层嵌套结构）
 │           └── 04/
 │               ├── 22/
-│               │   └── dream-1.md   ← 独立梦境报告
+│               │   └── dream-error-trend-analysis.md  ← 有 hint 的梦境报告
 │               └── 23/
-│                   └── dream-1.md   ← 独立梦境报告
+│                   └── dream-roam.md                   ← 无 hint 的漫游报告
 ```
 
 ## 入梦提示集
@@ -361,13 +361,18 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 
 #### 输出③：生成独立梦境报告
 
-独立梦境报告存放在 `<workspace>/.log/dreams/<yyyy>/<MM>/<dd>/dream-<N>.md`，每次做梦独立产出。
+独立梦境报告存放在 `<workspace>/.log/dreams/<yyyy>/<MM>/<dd>/dream-<topic>.md`，每次做梦独立产出。
+
+**命名规则**：
+- **有 hint**：`dream-<精简hint主题>.md`，如 `dream-error-trend-analysis.md`
+- **无 hint，有核心发现**：`dream-roam-<核心发现>.md`，如 `dream-roam-weread-encryption.md`
+- **无 hint，无明确发现**：`dream-roam.md`
 
 ```markdown
 ---
 type: dream
 created: <当前时间>
-dream_id: <梦境编号>
+dream_id: <精简topic，与文件名dream-<topic>中的topic一致>
 entry_log: <入口日志路径>
 hint_description: <入梦提示描述，无提示则为 null>
 hint_type: <task/perspective/null>
@@ -377,7 +382,7 @@ path_visited:
   - "<路径3>"
 ---
 
-# 梦境报告 #<编号>
+# 梦境报告：<topic>
 
 ## 游走路径
 

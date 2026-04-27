@@ -134,7 +134,7 @@ def _iter_dream_files(dreams_path, reverse=False):
         return
     dream_files = sorted(
         (f for f in dreams_path.rglob('dream-*.md')
-         if re.match(r'dream-\d+$', f.stem)),
+         if re.match(r'dream-(?!\d)', f.stem)),
         reverse=reverse,
     )
     yield from dream_files
@@ -342,7 +342,7 @@ def main():
         print("\n=== 做梦入口选择结果 ===")
         print(f"入口日志: {result['entry_path']}")
         print(f"选择理由: {result['reason']}")
-        print(f"梦境编号: #{result['dream_count']}")
+        print(f"梦境计数: {result['dream_count']}")
 
         for key, value in result.items():
             if key.startswith('entry_') and key != 'entry_path':
