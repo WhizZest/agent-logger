@@ -375,6 +375,7 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 ---
 type: dream
 created: <当前时间>
+author: "GLM-5.1 via Trae"  # AI Model via Agent Platform/Tool
 dream_id: <精简topic，与文件名dream-<topic>中的topic一致>
 entry_log: <入口日志路径>
 hint_description: <入梦提示描述，无提示则为 null>
