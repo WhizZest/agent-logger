@@ -339,7 +339,7 @@ def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='提取日志文件的元信息')
     parser.add_argument('--fields', '-f', nargs='+', 
-                       help='要提取的字段列表，例如: --fields title type tags')
+                       help='要提取的字段列表，逗号或空格分隔，例如: --fields title,type,tags')
     parser.add_argument('--all', '-a', action='store_true',
                        help='提取所有字段')
     parser.add_argument('--search', '-s', nargs='+',
