@@ -20,7 +20,6 @@ import re
 import argparse
 import random
 from pathlib import Path
-from datetime import datetime, timezone
 
 
 def extract_yaml_frontmatter(content):
@@ -83,34 +82,6 @@ def extract_yaml_frontmatter(content):
     return metadata
 
 
-def update_frontmatter_fields(file_path, fields):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    frontmatter_match = re.match(r'^(---\s*\n)(.*?)(\n---)', content, re.DOTALL)
-    if not frontmatter_match:
-        return False
-
-    opening = frontmatter_match.group(1)
-    yaml_content = frontmatter_match.group(2)
-    closing = frontmatter_match.group(3)
-    body = content[frontmatter_match.end():]
-
-    for field_name, field_value in fields:
-        field_pattern = re.compile(r'^(' + re.escape(field_name) + r':\s*).*$', re.MULTILINE)
-        if field_pattern.search(yaml_content):
-            yaml_content = field_pattern.sub(r'\g<1>' + field_value, yaml_content)
-        else:
-            yaml_content = yaml_content.rstrip('\n') + '\n' + field_name + ': ' + field_value
-
-    new_content = opening + yaml_content + closing + body
-
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(new_content)
-
-    return True
-
-
 def _iter_dream_files(dreams_path, reverse=False):
     if not dreams_path.exists():
         return
@@ -154,7 +125,7 @@ def _load_hint_candidates(candidates_path):
         return []
 
 
-def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=False, dry_run=False):
+def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=False):
     dream_count = get_dream_count(dreams_path)
 
     if debug:
@@ -259,20 +230,6 @@ def select_entry(log_dir, dreams_path, hint_candidates=None, fields=None, debug=
             selected = random.choice(log_entries)
             reason = "随机探索"
 
-    now = datetime.now().astimezone().isoformat(timespec='seconds')
-    new_count = selected['visit_count'] + 1
-    if not dry_run:
-        update_frontmatter_fields(selected['abs_path'], [
-            ('dream_visit_count', str(new_count)),
-            ('last_dreamed', f'"{now}"'),
-        ])
-
-    if debug:
-        if dry_run:
-            print(f"[DEBUG] [DRY-RUN] 将更新日志 front matter: {selected['path']} (visit_count={new_count})")
-        else:
-            print(f"[DEBUG] 已更新日志 front matter: {selected['path']} (visit_count={new_count})")
-
     result = {
         'entry_path': selected['path'],
         'reason': reason,
@@ -300,8 +257,6 @@ def main():
                         help='要输出的额外字段，逗号分隔，例如: --fields title,description,tags')
     parser.add_argument('--debug', '-d', action='store_true',
                         help='显示详细调试信息')
-    parser.add_argument('--dry-run', action='store_true',
-                        help='只选择入口，不写入 front matter（测试用）')
     args = parser.parse_args()
 
     log_dir = Path(args.log_path)
@@ -321,7 +276,7 @@ def main():
     fields = [f.strip() for f in args.fields.split(',') if f.strip()] if args.fields else None
     hint_candidates = _load_hint_candidates(Path(args.hint_candidates)) if args.hint_candidates else None
 
-    result = select_entry(log_dir, dreams_path, hint_candidates=hint_candidates, fields=fields, debug=args.debug, dry_run=args.dry_run)
+    result = select_entry(log_dir, dreams_path, hint_candidates=hint_candidates, fields=fields, debug=args.debug)
 
     if result:
         print("\n=== 做梦入口选择结果 ===")

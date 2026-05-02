@@ -362,6 +362,12 @@ def main():
                        help='显示详细的处理过程')
     args = parser.parse_args()
     
+    if args.fields:
+        flat_fields = []
+        for f in args.fields:
+            flat_fields.extend([x.strip() for x in f.split(',') if x.strip()])
+        args.fields = flat_fields
+    
     # 验证和解析日期参数
     from_date_obj = None
     to_date_obj = None

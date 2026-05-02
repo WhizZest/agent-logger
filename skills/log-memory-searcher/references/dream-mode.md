@@ -284,6 +284,8 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 
 在游走过程中，如果发现确实需要修改原始日志：
 
+⚠️ **修改前先确认完整上下文**：读取目标日志的全文（或用足够大的 limit 覆盖要修改的区域），确认现有内容，避免只看片段导致重复添加或冲突。
+
 **添加 wikilink**：发现日志 A 和日志 B 有关联时，必须能指明具体的关系类型。关系类型是开放列表，常见参考：
 
 | 关系类型 | 含义 | 示例 |
@@ -375,7 +377,7 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 ---
 type: dream
 created: <当前时间>
-author: "GLM-5.1 via Trae"  # AI Model via Agent Platform/Tool
+author: "<当前AI模型> via <当前Agent平台>"  # AI Model via Agent Platform/Tool
 dream_id: <精简topic，与文件名dream-<topic>中的topic一致>
 entry_log: <入口日志路径>
 hint_description: <入梦提示描述，无提示则为 null>
@@ -448,10 +450,9 @@ path_visited:
 
 ### 第六步：更新统计
 
-入口选择脚本已自动更新入口日志的 front matter（`dream_visit_count` +1，`last_dreamed` 更新为当前时间）。如果在游走过程中访问了其他日志，也需要更新其 front matter：
-
-- 为 path_visited 中的每个日志增加 `dream_visit_count`
-- 更新 `last_dreamed` 时间戳
+为游走路径中访问过的所有日志（包括入口日志）更新 front matter：
+- `dream_visit_count` +1
+- `last_dreamed` 更新为当前时间
 
 ⚠️ **无此字段 = 未被梦到**，新日志无需初始化，天然兼容。
 
