@@ -339,7 +339,7 @@ def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='提取日志文件的元信息')
     parser.add_argument('--fields', '-f', nargs='+', 
-                       help='要提取的字段列表，例如: --fields title type tags')
+                       help='要提取的字段列表，逗号或空格分隔，例如: --fields title,type,tags')
     parser.add_argument('--all', '-a', action='store_true',
                        help='提取所有字段')
     parser.add_argument('--search', '-s', nargs='+',
@@ -361,6 +361,12 @@ def main():
     parser.add_argument('--debug', '-d', action='store_true',
                        help='显示详细的处理过程')
     args = parser.parse_args()
+    
+    if args.fields:
+        flat_fields = []
+        for f in args.fields:
+            flat_fields.extend([x.strip() for x in f.split(',') if x.strip()])
+        args.fields = flat_fields
     
     # 验证和解析日期参数
     from_date_obj = None
