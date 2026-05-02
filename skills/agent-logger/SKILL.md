@@ -112,6 +112,15 @@ language: "zh"  # or "en", etc.
     - ✅ Good: `[[dream-entry-selector.py]]：本次新增的入梦提示选择脚本`
     - ✅ Good: `[[agent-logger/SKILL]]：日志记录规范，定义了 wikilink 用法`
     - ❌ Bad: `[[dream-entry-selector.py]]` — no description, unclear why it's linked
+  - **⚠️ CRITICAL: Link target must match actual filename**: The wikilink target (before `|` if present) must be the real filename (minus `.md` suffix), not a "logical name" or "abbreviation" you invent. Always verify the actual filename before constructing the link. If you want a human-friendly display name, use the pipe alias syntax `[[actual-filename|Display Name]]`.
+    - ✅ Good: `[[log-chrome-cdp-phase1-reverse]]` — matches actual filename `log-chrome-cdp-phase1-reverse.md`
+    - ✅ Good: `[[log-chrome-cdp-phase1-reverse|Phase 1 逆向能力]]` — pipe alias: target matches filename, display is human-friendly
+    - ❌ Bad: `[[chrome-cdp-phase1-reverse]]` — "logical name" that doesn't match the actual filename (missing `log-` prefix)
+    - ❌ Bad: `[[phase1]]` — abbreviated name that doesn't match any file
+  - **Pipe alias syntax** `[[filename|Display Text]]`: Use when the actual filename is long or not descriptive enough for inline reading. The part before `|` is the link target (must match filename), the part after `|` is the display text.
+    - ✅ `[[log-chrome-cdp-phase3-experience|Phase 3 体验完善]]`：target matches file, display is concise
+    - ✅ `[[dream-entry-selector.py|入梦提示选择器]]`：target matches file, display is localized
+    - ❌ `[[Phase 3 体验完善]]` — no pipe, display text used as target, won't match any file
   - Examples (ordered from preferred to acceptable):
     - ✅ **Best** (shortest & unique): `[[dream-entry-selector.py]]：入梦提示选择脚本`, `[[prs]]：PR 工作流参考`, `[[pr-reviews]]：PR 审查参考`
     - ✅ **Good** (needs prefix for uniqueness): `[[gh-cli/SKILL]]：GitHub CLI skill`, `[[agent-logger/SKILL]]：日志记录 skill`, `[[weread-cli/utils]]：微信读书工具函数`
@@ -216,8 +225,11 @@ After writing a log, manually check **file-reference** bidirectional links using
 
 > **What to validate**: Only validate links that reference actual files (contain `/` path separator or known skill namespaces like `gh-cli/`, `agent-logger/`). Skip **concept/topic** links (plain names without `/`) — these are forward references that may not have files yet.
 
+> **⚠️ MUST use exact `fd -p` pattern, NEVER use fuzzy keyword search**: Running `fd "keyword"` without `-p` will match any file containing that keyword, giving false confidence that a broken link is valid. Always use the `-p` (full path regex) flag with the anchored pattern shown below.
+
 ```bash
 # Check a wikilink: convert [[path/to/file]] to fd pattern
+# For pipe aliases [[filename|Display Text]], only validate the part before |
 # IMPORTANT: Use path separator anchor (\\|/) to avoid false positives (e.g., [[dream-mode]] should not match pr-dream-mode.md)
 # (\\|/) is cross-platform: matches \ on Windows and / on Linux/macOS
 fd -p "(\\|/)path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
@@ -226,7 +238,11 @@ fd -p "(\\|/)path/to/file.md$" <workspace> --hidden --no-ignore --max-results 5
 # [[gh-cli/SKILL]]              →  fd -p "(\\|/)gh-cli(\\|/)SKILL.md$" <workspace> --hidden --no-ignore --max-results 5
 # [[ollama-tool-call-demo.ts]]  →  fd -p "(\\|/)ollama-tool-call-demo.ts$" <workspace> --hidden --no-ignore --max-results 5
 # [[dream-mode]]                →  fd -p "(\\|/)dream-mode.md$" <workspace> --hidden --no-ignore --max-results 5
+# [[log-chrome-cdp-phase1-reverse|Phase 1]]  →  fd -p "(\\|/)log-chrome-cdp-phase1-reverse.md$" <workspace> --hidden --no-ignore --max-results 5
 # [[Topic Name]]                →  SKIP (concept link, no file required)
+#
+# ❌ WRONG — fuzzy keyword search, will give false positives:
+# fd "phase1" D:\agentSpace\.log   ← matches ANY file with "phase1" in name, can't detect missing prefix
 ```
 
 **Interpret results**:
