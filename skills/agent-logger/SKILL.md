@@ -112,7 +112,7 @@ language: "zh"  # or "en", etc.
     - ✅ Good: `[[dream-entry-selector.py]]：本次新增的入梦提示选择脚本`
     - ✅ Good: `[[agent-logger/SKILL]]：日志记录规范，定义了 wikilink 用法`
     - ❌ Bad: `[[dream-entry-selector.py]]` — no description, unclear why it's linked
-  - **⚠️ CRITICAL: Link target must match actual filename**: The wikilink target (before `|` if present) must be the real filename (minus `.md` suffix), not a "logical name" or "abbreviation" you invent. Always verify the actual filename before constructing the link. If you want a human-friendly display name, use the pipe alias syntax `[[actual-filename|Display Name]]`.
+  - **⚠️ CRITICAL (file-reference links only): Link target must match actual filename**: The wikilink target (before `|` if present) must be the real filename (minus `.md` suffix), not a "logical name" or "abbreviation" you invent. Always verify the actual filename before constructing the link. If you want a human-friendly display name, use the pipe alias syntax `[[actual-filename|Display Name]]`. Concept/topic links (plain names without `/`) are allowed and are not required to match an existing file.
     - ✅ Good: `[[log-chrome-cdp-phase1-reverse]]` — matches actual filename `log-chrome-cdp-phase1-reverse.md`
     - ✅ Good: `[[log-chrome-cdp-phase1-reverse|Phase 1 逆向能力]]` — pipe alias: target matches filename, display is human-friendly
     - ❌ Bad: `[[chrome-cdp-phase1-reverse]]` — "logical name" that doesn't match the actual filename (missing `log-` prefix)
