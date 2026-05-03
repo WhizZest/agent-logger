@@ -95,20 +95,29 @@ def extract_yaml_frontmatter(content):
     return metadata
 
 def filter_metadata(metadata, fields=None, show_all=False):
-    """根据指定的字段过滤元数据"""
+    """根据指定的字段过滤元数据，默认字段始终包含。
+    返回 (filtered_dict, found_user_fields_set)"""
     if show_all:
-        return metadata
-    
+        return metadata, set()
+
+    default_fields = ['title', 'description', 'file_path']
+    user_fields = []
+
     if not fields:
-        # 默认字段
-        fields = ['title', 'description', 'file_path']
-    
+        fields = default_fields
+    else:
+        user_fields = [f for f in fields if f not in default_fields]
+        fields = list(dict.fromkeys(default_fields + fields))
+
     filtered = {}
+    found_user = set()
     for field in fields:
         if field in metadata:
             filtered[field] = metadata[field]
-    
-    return filtered
+            if field in user_fields:
+                found_user.add(field)
+
+    return filtered, found_user
 
 def parse_search_terms(search_terms):
     """
@@ -423,6 +432,7 @@ def main():
     print(f"找到 {len(md_files)} 个日志文件")
     
     metadata_list = []
+    found_user_fields = set()
     
     for file_path in md_files:
         try:
@@ -453,7 +463,8 @@ def main():
                         continue
                 
                 # 根据参数过滤字段
-                filtered_metadata = filter_metadata(metadata, args.fields, args.all)
+                filtered_metadata, found = filter_metadata(metadata, args.fields, args.all)
+                found_user_fields.update(found)
                 
                 metadata_list.append(filtered_metadata)
                 if args.debug:
@@ -485,7 +496,14 @@ def main():
     print(f"\n完成！")
     print(f"已提取 {len(metadata_list)} 个文件的元信息")
     print(f"输出文件: {output_file}")
-    
+
+    if args.fields:
+        default_fields = {'title', 'description', 'file_path'}
+        user_fields = set(args.fields) - default_fields
+        missing = user_fields - found_user_fields
+        if missing:
+            print(f"\n警告: 以下字段在所有文件中均不存在: {', '.join(sorted(missing))}")
+
     # 显示统计信息（只在提取了对应字段时显示）
     if metadata_list:
         # 检查是否提取了 type 字段
