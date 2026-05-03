@@ -497,7 +497,7 @@ def main():
     print(f"已提取 {len(metadata_list)} 个文件的元信息")
     print(f"输出文件: {output_file}")
 
-    if args.fields:
+    if args.fields and not args.all:
         default_fields = {'title', 'description', 'file_path'}
         user_fields = set(args.fields) - default_fields
         missing = user_fields - found_user_fields
