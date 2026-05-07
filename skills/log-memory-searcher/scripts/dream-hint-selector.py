@@ -80,7 +80,7 @@ def _parse_yaml_simple(content):
                         while i < len(lines):
                             item_line = lines[i]
                             stripped = item_line.strip()
-                            if stripped.startswith('- '):
+                            if stripped.startswith('- ') and not item_line.startswith('  - '):
                                 item_val = stripped[2:].strip().strip('"').strip("'")
                                 val.append(item_val)
                                 i += 1
