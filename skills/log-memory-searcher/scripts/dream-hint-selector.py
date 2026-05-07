@@ -74,6 +74,22 @@ def _parse_yaml_simple(content):
                     elif key == 'last_used':
                         if val in ('null', 'None', ''):
                             val = None
+                    elif key == 'associated_reports':
+                        val = []
+                        i += 1
+                        while i < len(lines):
+                            item_line = lines[i]
+                            stripped = item_line.strip()
+                            if stripped.startswith('- '):
+                                item_val = stripped[2:].strip().strip('"').strip("'")
+                                val.append(item_val)
+                                i += 1
+                            elif stripped and not stripped.startswith('#'):
+                                break
+                            else:
+                                i += 1
+                        hint[key] = val
+                        continue
                     hint[key] = val
                 i += 1
             if 'description' in hint:
@@ -137,6 +153,11 @@ def save_hints(hints_path, hints):
             lines.append(f'    last_used: null')
         if hint.get('disposable'):
             lines.append(f'    disposable: true')
+        associated = hint.get('associated_reports')
+        if associated:
+            lines.append(f'    associated_reports:')
+            for report in associated:
+                lines.append(f'      - "{report}"')
 
     with open(hints_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
@@ -306,6 +327,9 @@ def main():
         print(f"类型: {selected.get('type')}")
         if selected.get('disposable'):
             print("一次性: 是（已从提示集中删除）")
+        associated = selected.get('associated_reports')
+        if associated:
+            print(f"关联报告: {', '.join(associated)}")
 
 
 if __name__ == '__main__':
