@@ -109,6 +109,8 @@ hints:
     priority: 3
     last_used: null
     disposable: true
+    associated_reports:
+      - "2026/05/07/dream-db-optimization.md"
 ```
 
 ### 字段说明
@@ -121,6 +123,7 @@ hints:
 | `priority` | 是 | 优先级数值，正整数，推荐 1-3 |
 | `last_used` | 是 | 上次使用时间（ISO 8601），null 表示未使用过 |
 | `disposable` | 否 | 默认 false。true 表示用一次后自动删除（即续梦提示） |
+| `associated_reports` | 否 | 仅用于 disposable 提示。产生该提示的梦境报告路径列表（相对于 `.log/dreams/`），供下游梦境追溯关联 |
 
 ### 选择算法
 
@@ -374,6 +377,8 @@ python <skill_dir>/scripts/dream-entry-selector.py \
 - **无 hint，有核心发现**：`dream-roam-<核心发现>.md`，如 `dream-roam-weread-encryption.md`
 - **无 hint，无明确发现**：`dream-roam.md`
 
+**关联报告**：如果本次梦境由续梦提示触发，且该提示带有 `associated_reports`，则在报告正文中填充「关联的梦境报告」节，以 wikilink 链接到上游报告。
+
 ```markdown
 ---
 type: dream
@@ -422,6 +427,10 @@ path_visited:
 如果有续梦意图，请同步添加到 `dream-hints.yaml`。无续梦意图则省略此节。
 - 续梦描述：...
 
+## 关联的梦境报告（可选）
+
+- [[<上游梦境报告路径>]] ：产生本次续梦提示的梦境报告
+
 ## 修改的日志（可选）
 
 1. [[日志1]] 修改内容：...
@@ -444,10 +453,13 @@ path_visited:
     priority: 3
     last_used: null
     disposable: true
+    associated_reports:
+      - "<本次梦境报告路径>"
 ```
 3. 保存文件
 
 ⚠️ 续梦提示的 `priority` 由 Agent 根据实际情况灵活决定，`cooldown_days` 固定为 0。
+⚠️ `associated_reports` 必须填入本次梦境报告的路径（相对于 `.log/dreams/`），用于下游梦境追溯关联。
 
 ### 第六步：更新统计
 
