@@ -30,7 +30,7 @@ Go through these questions:
 
 1. **Result angle** — What was accomplished? What changed? (→ type: `log`)
 2. **Learning angle** — What did I learn? What surprised me? What would I do differently? (→ type: `learning`)
-3. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`)
+3. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`, use `error_pattern` to classify)
 4. **Process angle** — Was the process efficient? What bottlenecks existed? How could the workflow improve? (→ type: `reflection`)
 5. **Decision angle** — Were there non-obvious design decisions? Trade-offs that future readers should understand? (→ type: `log` or `reflection`)
 6. **Collaboration angle** — Did interaction with other agents/tools/reviewers yield insights? (→ type: `learning`)
