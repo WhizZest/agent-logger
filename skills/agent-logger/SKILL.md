@@ -44,17 +44,6 @@ Go through these questions:
 | Each angle has substantial content (3+ paragraphs) | Split into separate logs, cross-link them |
 | A "result" log exists but "learning" angle is rich | Create a separate learning log (e.g., a complex bug fix where the lesson deserves its own space) |
 
-#### Present the Plan
-
-For complex tasks (3+ angles with substance), present the brainstorm to the user:
-
-```
-这个任务可以从以下角度记录：
-1. 结果总结 — 做了什么、改了什么
-2. 经验教训 — 过程中学到的东西
-3. 过程反思 — 流程哪里可以改进
-```
-
 ### Step 1: Get Current Time
 - Get current time in ISO 8601 format with timezone
 - Format example: `2026-03-18T20:56:00+08:00`
