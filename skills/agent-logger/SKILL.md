@@ -20,6 +20,41 @@ Invoke this skill in these scenarios:
 
 ## Logging Process
 
+### Step 0: Brainstorm Logging Angles (MANDATORY)
+
+**Before writing any log, pause and brainstorm what angles exist for this task.** Complex tasks often warrant multiple logs from different perspectives. Skipping this step leads to missed insights.
+
+#### Brainstorm Checklist
+
+Go through these questions:
+
+1. **Result angle** — What was accomplished? What changed? (→ type: `log`)
+2. **Learning angle** — What did I learn? What surprised me? What would I do differently? (→ type: `learning`)
+3. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`, use `error_pattern` to classify)
+4. **Process angle** — Was the process efficient? What bottlenecks existed? How could the workflow improve? (→ type: `reflection`)
+5. **Decision angle** — Were there non-obvious design decisions? Trade-offs that future readers should understand? (→ type: `log` or `reflection`)
+6. **Collaboration angle** — Did interaction with other agents/tools/reviewers yield insights? (→ type: `learning`)
+
+#### Decision Rules: Split or Combine?
+
+| Situation | Action |
+|-----------|--------|
+| Only one angle has substance | Write 1 log, skip the rest |
+| Two angles are closely related and each is thin | Combine into 1 log with clear sections |
+| Each angle has substantial content (3+ paragraphs) | Split into separate logs, cross-link them |
+| A "result" log exists but "learning" angle is rich | Create a separate learning log (e.g., a complex bug fix where the lesson deserves its own space) |
+
+#### Present the Plan
+
+For complex tasks (3+ angles with substance), present the brainstorm to the user:
+
+```
+这个任务可以从以下角度记录：
+1. 结果总结 — 做了什么、改了什么
+2. 经验教训 — 过程中学到的东西
+3. 过程反思 — 流程哪里可以改进
+```
+
 ### Step 1: Get Current Time
 - Get current time in ISO 8601 format with timezone
 - Format example: `2026-03-18T20:56:00+08:00`
@@ -45,6 +80,7 @@ type: "log"  # or "learning", "error", "reflection", etc.
 author: "<当前AI模型> via <当前Agent平台>"  # AI Model via Agent Platform/Tool
 tags: ["#tag1", "#tag2", "#tag3"] # Use graph-compatible tags
 language: "zh"  # or "en", etc.
+error_pattern: "<错误模式>"  # Optional, for type=error only. Classify the error pattern for cross-log retrieval. Examples: "信息虚构", "流程违规", "修改不完整", "工具盲区"
 ---
 ```
 
@@ -203,7 +239,7 @@ The following are common type references, but not limited to — you can define 
 |------|-------------|----------|
 | `log` | General task completion | Finishing routine tasks |
 | `learning` | New knowledge acquired | Learning new technologies or concepts |
-| `error` | Mistakes and lessons | Documenting errors and fixes |
+| `error` | Mistakes and lessons | Documenting errors and fixes. Use `error_pattern` frontmatter field to classify (e.g., "信息虚构", "流程违规", "修改不完整", "工具盲区") |
 | `reflection` | Self-reflection | Thinking about improvements or insights |
 
 ## Best Practices
