@@ -182,6 +182,10 @@ def match_keywords(metadata, keyword_groups):
     if 'type' in metadata and metadata['type']:
         text_content.append(str(metadata['type']).lower())
     
+    # 检查 error_pattern
+    if 'error_pattern' in metadata and metadata['error_pattern']:
+        text_content.append(str(metadata['error_pattern']).lower())
+    
     # 合并所有文本内容
     full_text = ' '.join(text_content)
     

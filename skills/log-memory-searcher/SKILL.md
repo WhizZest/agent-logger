@@ -212,19 +212,6 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 
 **触发词**："做个梦"、"dream"、"整理一下记忆"
 
-**快速概览**：
-
-1. **前置检查**：检查 Git 是否有未提交修改，有则提醒用户先提交
-2. **选择入梦提示**：调用 `dream-hint-selector.py` 从入梦提示集中选择提示（或"无提示"）
-3. **选择入口**：根据提示类型分支——task 型直接搜索遍历；perspective 型搜索候选后调用 `dream-entry-selector.py`；无提示直接调用 `dream-entry-selector.py`
-4. **游走 / 分析**：task 型系统性遍历；perspective 型带视角自由联想；无提示纯自由联想
-5. **产出四种输出**：
-   - ① 修改原始日志（添加带关系类型的 wikilink、补充 description）
-   - ② 更新 AGENTS.md（可选，workspace 根目录，跨梦境迭代，保持精炼）
-   - ③ 生成独立梦境报告（单次梦境产出）
-   - ④ 追加续梦提示到入梦提示集（可选，仅在做梦过程中确实产生了续梦意图时执行）
-6. **更新统计**：更新沿途日志 front matter 中的 `dream_visit_count` 和 `last_dreamed`
-
 📖 **完整工作流程、输出模板、关系类型参考表、约束详情**：见 [[references/dream-mode.md]]
 
 ---
