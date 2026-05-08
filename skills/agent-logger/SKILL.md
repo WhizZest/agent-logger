@@ -45,8 +45,12 @@ Go through these questions:
 | A "result" log exists but "learning" angle is rich | Create a separate learning log (e.g., a complex bug fix where the lesson deserves its own space) |
 
 ### Step 1: Get Current Time
-- Get current time in ISO 8601 format with timezone
+- Get current **local time** in ISO 8601 format with timezone offset
 - Format example: `2026-03-18T20:56:00+08:00`
+- **⚠️ 陷阱**（JavaScript 环境）: `new Date().toISOString()` 返回 UTC 时间（末尾 `Z`），直接 `replace('Z', '+08:00')` 只改标签不改时间，会导致时间偏差数小时！
+- **正确做法**（用系统命令，零依赖）:
+  - **Windows (PowerShell)**: `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`
+  - **Linux/macOS (bash/zsh)**: `date +"%Y-%m-%dT%H:%M:%S%z" | sed 's/\([+-][0-9]\{2\}\)\([0-9]\{2\}\)$/\1:\2/'`
 
 ### Step 2: Create Log Directory
 - Check if `<workspace>/.log/<yyyy>/<MM>/<dd>/` exists
