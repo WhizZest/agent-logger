@@ -47,8 +47,8 @@ Go through these questions:
 ### Step 1: Get Current Time
 - Get current **local time** in ISO 8601 format with timezone offset
 - Format example: `2026-03-18T20:56:00+08:00`
-- **⚠️ 陷阱**（JavaScript 环境）: `new Date().toISOString()` 返回 UTC 时间（末尾 `Z`），直接 `replace('Z', '+08:00')` 只改标签不改时间，会导致时间偏差数小时！
-- **正确做法**（用系统命令，零依赖）:
+- **⚠️ Trap (JavaScript)**: `new Date().toISOString()` returns UTC time (ending in `Z`). Simply doing `replace('Z', '+08:00')` changes the label but not the actual time value, causing a multi-hour discrepancy!
+- **Correct approach** (system commands, zero dependencies):
   - **Windows (PowerShell)**: `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`
   - **Linux/macOS (bash/zsh)**: `date +"%Y-%m-%dT%H:%M:%S%z" | sed 's/\([+-][0-9]\{2\}\)\([0-9]\{2\}\)$/\1:\2/'`
 
