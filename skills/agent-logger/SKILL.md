@@ -69,7 +69,7 @@ Go through these questions:
 ---
 title: "Topic Title" # Always use English for title
 created: "2026-03-18T20:56:00+08:00"
-type: "log"  # or "learning", "error", "reflection", etc.
+type: "log"  # or "learning", "error", "reflection", "refactor", etc.
 author: "<当前AI模型> via <当前Agent平台>"  # AI Model via Agent Platform/Tool
 tags: ["#tag1", "#tag2", "#tag3"] # Use graph-compatible tags
 language: "zh"  # or "en", etc.
@@ -234,6 +234,7 @@ The following are common type references, but not limited to — you can define 
 | `learning` | New knowledge acquired | Learning new technologies or concepts |
 | `error` | Mistakes and lessons | Documenting errors and fixes. Use `error_pattern` frontmatter field to classify (e.g., "信息虚构", "流程违规", "修改不完整", "工具盲区") |
 | `reflection` | Self-reflection | Thinking about improvements or insights |
+| `refactor` | Code or structure refactoring | Restructuring without changing external behavior |
 
 ## Best Practices
 
