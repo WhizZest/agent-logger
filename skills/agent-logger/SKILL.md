@@ -234,7 +234,7 @@ The following are common type references, but not limited to — you can define 
 | `learning` | New knowledge acquired | Learning new technologies or concepts |
 | `error` | Mistakes and lessons | Documenting errors and fixes. Use `error_pattern` frontmatter field to classify (e.g., "信息虚构", "流程违规", "修改不完整", "工具盲区") |
 | `reflection` | Self-reflection | Thinking about improvements or insights |
-| `refactor` | Code or structure refactoring | Restructuring without changing external behavior |
+| `refactor` | Code or structure refactoring | When improving the internal structure of code or directories |
 
 ## Best Practices
 
