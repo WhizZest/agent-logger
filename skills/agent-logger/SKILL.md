@@ -39,7 +39,7 @@ These are the "meat" of the task — code can always be read from the repo, but 
 Go through these questions:
 
 1. **Result angle** — What was accomplished? What changed? (→ type: `log`)
-2. **Decision angle** — What design decisions were made and WHY? What constraints forced the choice? What alternatives were rejected and for what reasons? **This is often the most valuable angle — the reasoning behind choices fades faster than the code itself.** Record all non-obvious trade-offs. (→ type: `learning` or `reflection`)
+2. **Decision angle** — What design decisions were made and WHY? What constraints forced the choice? What alternatives were rejected and for what reasons? **This is often the most valuable angle — the reasoning behind choices fades faster than the code itself.** Record all non-obvious trade-offs. (→ type: `log`, `learning`, or `reflection`)
 3. **Learning angle** — What did I learn? What surprised me? What would I do differently? (→ type: `learning`)
 4. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`, use `error_pattern` to classify)
 5. **Process angle** — Was the process efficient? What bottlenecks existed? How could the workflow improve? (→ type: `reflection`)
@@ -247,7 +247,7 @@ title: "Chrome CDP Auto-Launch Design Decisions"
 created: "2026-03-18T20:56:00+08:00"
 type: "learning"
 author: "<当前AI模型> via <当前Agent平台>"
-tags: ["#design-decision", "#automation", "#architecture"]
+tags: ["#design-decision", "#automation", "#architecture", "#设计决策", "#自动化", "#架构"]
 language: "zh"
 ---
 ```
