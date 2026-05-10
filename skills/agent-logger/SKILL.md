@@ -20,7 +20,17 @@ Invoke this skill in these scenarios:
 
 ## Logging Process
 
-### Step 0: Brainstorm Logging Angles (MANDATORY)
+### Step 0: Review What Actually Happened (MANDATORY)
+
+**Before brainstorming angles, briefly scan the conversation and ask:**
+- What did we debate, argue about, or go back and forth on?
+- What constraints or limitations surprised us?
+- What alternatives were considered and rejected?
+- What was the user most concerned about?
+
+These are the "meat" of the task — code can always be read from the repo, but the *why* behind decisions is ephemeral and must be captured now.
+
+### Step 0.5: Brainstorm Logging Angles (MANDATORY)
 
 **Before writing any log, pause and brainstorm what angles exist for this task.** Complex tasks often warrant multiple logs from different perspectives. Skipping this step leads to missed insights.
 
@@ -29,10 +39,10 @@ Invoke this skill in these scenarios:
 Go through these questions:
 
 1. **Result angle** — What was accomplished? What changed? (→ type: `log`)
-2. **Learning angle** — What did I learn? What surprised me? What would I do differently? (→ type: `learning`)
-3. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`, use `error_pattern` to classify)
-4. **Process angle** — Was the process efficient? What bottlenecks existed? How could the workflow improve? (→ type: `reflection`)
-5. **Decision angle** — Were there non-obvious design decisions? Trade-offs that future readers should understand? (→ type: `log` or `reflection`)
+2. **Decision angle** — What design decisions were made and WHY? What constraints forced the choice? What alternatives were rejected and for what reasons? **This is often the most valuable angle — the reasoning behind choices fades faster than the code itself.** Record all non-obvious trade-offs. (→ type: `log`, `learning`, or `reflection`)
+3. **Learning angle** — What did I learn? What surprised me? What would I do differently? (→ type: `learning`)
+4. **Error angle** — What went wrong? How was it fixed? What prevented it from happening again? (→ type: `error`, use `error_pattern` to classify)
+5. **Process angle** — Was the process efficient? What bottlenecks existed? How could the workflow improve? (→ type: `reflection`)
 6. **Collaboration angle** — Did interaction with other agents/tools/reviewers yield insights? (→ type: `learning`)
 
 #### Decision Rules: Split or Combine?
@@ -159,6 +169,7 @@ error_pattern: "<错误模式>"  # Optional, for type=error only. Classify the e
     - ❌ Bad: `[[log-memory-searcher/scripts/dream-entry-selector.py]]` — unnecessarily long when `[[dream-entry-selector.py]]` is already unique
 - **`.log` directory is the only exception**: Paths within the `.log` directory structure (e.g., `.log/2026/04/13/completed-task.md`) are stable and acceptable, as they are managed by this skill itself
 - **Why this matters**: A log entry saying "fixed a bug in `src/utils/helpers.js`" is worthless when that path no longer exists. But "fixed a bug in the `formatDate()` function that caused timezone offset errors" remains useful forever, and the inline code snippet preserves the exact context
+- **Stable external URLs are acceptable**: Links to GitHub PRs, issues, documentation, or other permanent web resources (e.g., `https://github.com/owner/repo/pull/34`) are fine — they are stable identifiers, not fragile filesystem paths. Unlike local file paths, these URLs are designed to be permanent references.
 
 ### Knowledge Graph Friendly Syntax
 Use markdown syntax that supports knowledge graph generation:
@@ -178,7 +189,9 @@ Use markdown syntax that supports knowledge graph generation:
 - This helps knowledge graphs connect documents across languages
 - Bilingual tags ensure documents in different languages can reference the same concepts
 
-## Example Log Entry
+## Example Log Entries
+
+### Example 1: Tech notes (baseline — use when there's no deeper angle)
 
 ```yaml
 ---
@@ -223,6 +236,79 @@ useEffect(() => {
 - [[React Components]]：组件化开发基础
 - [[State Management]]：状态管理方案
 ````
+
+### Example 2: Design decision log (deep — the more valuable kind)
+
+**Scenario**: Refactored a Chrome automation tool's connection layer from user-manual to auto-launch. Multiple non-trivial design decisions were made.
+
+```yaml
+---
+title: "Chrome CDP Auto-Launch Design Decisions"
+created: "2026-03-18T20:56:00+08:00"
+type: "learning"
+author: "<当前AI模型> via <当前Agent平台>"
+tags: ["#design-decision", "#automation", "#architecture", "#设计决策", "#自动化", "#架构"]
+language: "zh"
+---
+```
+
+````markdown
+# Chrome CDP 自动启动——设计决策与讨论
+
+**Time**: 2026-03-18T20:56:00+08:00
+
+**Tags**: #design-decision #automation #architecture
+
+## 1. 问题本质
+
+旧方案要求用户手动开启远程调试 + 每次弹窗确认，对自动化是结构性障碍。
+旧方案唯一优势：共享用户默认 profile 的 cookies。
+
+## 2. 核心设计决策
+
+### 决策 1：不能使用 Chrome 默认 profile
+
+Chrome 136+ 不再支持在默认 profile 上启用远程调试——在已运行的 Chrome 上添加 `--remote-debugging-port` 会报错或静默忽略。
+→ **要么手动开启（旧方案），要么独立 profile（新方案），没有中间路线。**
+
+### 决策 2：沿用 RUNTIME_DIR 而非硬编码系统路径
+
+`RUNTIME_DIR` 是现有运行时数据目录，把 Chrome profile 放在其下统一管理，清理时删除整个目录即可。
+| 方案 | 路径示例 | 优劣 |
+|------|---------|------|
+| 系统固定路径 | `C:\Temp\chrome-profile` | 简单，但卸载后残留 |
+| RUNTIME_DIR 子目录 | `<runtime>/chrome-profile` | 统一管理，与 socket/cache 同目录 |
+
+### 决策 3：Chrome 不随 daemon 退出而关闭
+
+Chrome 不是无头浏览器，用户也可能使用这个窗口。强行退出导致困惑和数据丢失。
+→ daemon 空闲 120min 退出，Chrome 持续运行。下次命令复用同一实例。
+
+### 决策 4：CDP_CHROME_PATH 暂不实现
+
+Windows/macOS 已通过系统机制解决路径发现问题，Linux 可依赖 PATH。
+当前无使用场景，实现后反而需要维护和文档化。
+
+## 3. 审查中的关键讨论
+
+- 第一轮：Chrome 未安装的错误处理、fetch 超时控制（确认无需）、浏览器退出机制（确认不需要）
+- 第二轮：错误消息引用未实现功能的 bug、WSL 遗留代码、CDP_PORT=0 边界
+- 第三轮：测试硬编码路径导致不可移植、daemon socket 缺少 error 事件处理
+
+## 4. 新旧方案最终对比
+
+| 维度 | 旧方案 | 新方案 |
+|------|--------|--------|
+| Chrome 启动 | 用户手动 | 自动 |
+| 弹窗确认 | 每次 attach/open | 无 |
+| Cookies | 共享默认 profile | 独立持久化 |
+
+## 相关日志
+
+- [[log-chrome-cdp-auto-launch-completed|chrome-cdp-auto-launch-completed]]：功能交付记录，含 GitHub PR 链接
+````
+
+**Why this example is better**: The React Hooks log captures *what* (API surface). The design decision log captures *why* (constraints, rejected alternatives, trade-offs). Six months later, the `why` is what you won't remember — the `what` is always available in the code.
 
 ## Log Types
 
