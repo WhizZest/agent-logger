@@ -341,6 +341,9 @@ def save_as_md(metadata_list, output_file):
             
             # 写入所有字段
             for key, value in metadata.items():
+                # file_path 使用双向链接格式，方便在 VS Code 中点击跳转
+                if key == 'file_path' and isinstance(value, str):
+                    value = f'[[{value}]]'
                 formatted_value = format_yaml_value(value)
                 f.write(f'{key}: {formatted_value}\n')
         
