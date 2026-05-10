@@ -497,7 +497,7 @@ path_visited:
 
 | 步骤 | 触发条件 | 检查方式 |
 |------|---------|---------|
-| 输出1 修改原始日志 | 游走中发现需要添加 wikilink 或补充 description | 回顾 path_visited，是否有遗漏的关联或描述补充 |
+| 输出1 修改原始日志 | 游走中发现需要添加 wikilink、补充 description，或日志存在合规问题 | 1. 回顾 path_visited，是否有遗漏的关联或描述补充？2. 对照 agent-logger 规范检查 frontmatter、wikilink 格式、标签、敏感信息等 |
 | 输出2 更新 AGENTS.md | 发现了跨场景通用信息，或已有内容不再适用 | 1. 报告中「场景特定的经验」是否有可泛化的条目？2. 报告中是否提到某条 AGENTS.md 内容已过时/不再适用？ |
 | 输出3 生成独立梦境报告 | 始终触发 | 确认梦境报告文件已创建在 `dreams/` 目录下 |
 | 输出4 回写上游报告 | 本次由续梦提示触发，且 `dream-hint-selector.py` 输出含「关联报告」 | 检查 `dream-hint-selector.py` 的输出 |
