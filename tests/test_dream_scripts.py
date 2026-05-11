@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 import importlib
 import tempfile
 from pathlib import Path
@@ -13,6 +14,7 @@ from _yaml_utils import extract_yaml_frontmatter
 dream_stats_updater = importlib.import_module('dream-stats-updater')
 update_log_stats = dream_stats_updater.update_log_stats
 detect_log_base = dream_stats_updater.detect_log_base
+find_in_workspace = dream_stats_updater.find_in_workspace
 
 
 class TestExtractYamlFrontmatter:
@@ -291,3 +293,34 @@ class TestDetectLogBase:
 
             with pytest.raises(SystemExit):
                 detect_log_base(str(report))
+
+
+class TestFindInWorkspace:
+
+    def test_finds_existing_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / 'subdir').mkdir()
+            (Path(tmp) / 'subdir' / 'target.md').write_text('hello')
+
+            result = find_in_workspace('target.md', str(tmp))
+            assert result is not None
+            assert 'target.md' in result
+
+    def test_file_not_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = find_in_workspace('nonexistent.md', str(tmp))
+            assert result is None
+
+    def test_search_root_not_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.rmdir(tmp)
+            result = find_in_workspace('test.md', tmp)
+            assert result is None
+
+    def test_fd_binary_not_available(self, monkeypatch):
+        def mock_run(*args, **kwargs):
+            raise FileNotFoundError('fd not found')
+        monkeypatch.setattr(subprocess, 'run', mock_run)
+        with tempfile.TemporaryDirectory() as tmp:
+            result = find_in_workspace('test.md', str(tmp))
+            assert result is None

@@ -18,6 +18,17 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install fd-find
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fd-find
+          FDFIND_PATH=$(which fdfind)
+          if [ -z "$FDFIND_PATH" ]; then
+            echo "::error::fdfind not found after installation"
+            exit 1
+          fi
+          sudo ln -sf "$FDFIND_PATH" /usr/local/bin/fd
+
       - name: Install dependencies
         run: pip install pytest
 
