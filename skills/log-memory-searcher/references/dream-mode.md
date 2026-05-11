@@ -455,6 +455,14 @@ path_visited:
 
 ⚠️ **无此字段 = 未被梦到**，新日志无需初始化，天然兼容。
 
+**推荐使用脚本自动化**：
+
+```bash
+python <skill_dir>/scripts/dream-stats-updater.py --report <梦境报告路径>
+```
+
+脚本自动从报告的 `path_visited` 提取文件列表，无需手动指定。支持 `--dry-run` 预览模式。
+
 #### 输出检查清单
 
 生成梦境报告后，逐项核对以下输出步骤是否遗漏：
@@ -490,6 +498,19 @@ path_visited:
 
 # 可选参数
 --debug, -d         显示详细调试信息
+--help              显示帮助信息
+```
+
+### dream-stats-updater.py
+
+```bash
+# 必需参数
+--report, -r        梦境报告文件路径（必需）
+
+# 可选参数
+--log-base          日志根目录（默认从报告路径自动检测 .log 目录）
+--dry-run           仅预览，不实际修改文件
+--time              指定时间戳（默认使用系统本地时区）
 --help              显示帮助信息
 ```
 

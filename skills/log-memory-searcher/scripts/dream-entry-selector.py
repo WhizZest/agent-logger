@@ -21,65 +21,7 @@ import argparse
 import random
 from pathlib import Path
 
-
-def extract_yaml_frontmatter(content):
-    match = re.match(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return None
-
-    yaml_content = match.group(1)
-    metadata = {}
-
-    lines = yaml_content.split('\n')
-    current_key = None
-    current_value = []
-    in_array = False
-
-    for line in lines:
-        kv_match = re.match(r'^(\w+):\s*(.*)', line)
-
-        if kv_match:
-            if current_key and in_array:
-                array_str = '\n'.join(current_value)
-                array_match = re.search(r'\[(.*)\]', array_str, re.DOTALL)
-                if array_match:
-                    items_str = array_match.group(1)
-                    items = [item.strip().strip('"').strip("'") for item in items_str.split(',') if item.strip()]
-                    metadata[current_key] = items
-
-            current_key = kv_match.group(1).strip()
-            current_value = [kv_match.group(2).strip()]
-
-            if '[' in kv_match.group(2) and ']' not in kv_match.group(2):
-                in_array = True
-            elif '[' in kv_match.group(2) and ']' in kv_match.group(2):
-                array_match = re.search(r'\[(.*)\]', kv_match.group(2))
-                if array_match:
-                    items_str = array_match.group(1)
-                    items = [item.strip().strip('"').strip("'") for item in items_str.split(',') if item.strip()]
-                    metadata[current_key] = items
-                else:
-                    value = kv_match.group(2).strip().strip('"').strip("'")
-                    metadata[current_key] = value
-                current_key = None
-                in_array = False
-            else:
-                value = kv_match.group(2).strip().strip('"').strip("'")
-                metadata[current_key] = value
-                current_key = None
-                in_array = False
-        elif in_array and current_key:
-            current_value.append(line)
-
-    if current_key and in_array:
-        array_str = '\n'.join(current_value)
-        array_match = re.search(r'\[(.*)\]', array_str, re.DOTALL)
-        if array_match:
-            items_str = array_match.group(1)
-            items = [item.strip().strip('"').strip("'") for item in items_str.split(',') if item.strip()]
-            metadata[current_key] = items
-
-    return metadata
+from _yaml_utils import extract_yaml_frontmatter
 
 
 def _iter_dream_files(dreams_path, reverse=False):
