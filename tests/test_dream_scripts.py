@@ -77,6 +77,15 @@ class TestExtractYamlFrontmatter:
             'tags': ['a'],
         }
 
+    def test_hyphenated_key(self):
+        content = '---\ntype: log\nlast-dreamed: "2026-01-01"\nvisit-count: 5\n---'
+        result = extract_yaml_frontmatter(content)
+        assert result == {
+            'type': 'log',
+            'last-dreamed': '2026-01-01',
+            'visit-count': '5',
+        }
+
 
 class TestUpdateLogStats:
 

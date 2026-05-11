@@ -156,20 +156,34 @@ def main():
 
     success = 0
     skipped = 0
+    failed = 0
+
+    resolved_base = log_base.resolve()
 
     for entry in path_visited:
-        log_path = log_base / entry
+        log_path = (log_base / entry).resolve()
+
+        try:
+            log_path.relative_to(resolved_base)
+        except ValueError:
+            print(f'  [拒绝] {entry} (路径不在日志目录内)')
+            skipped += 1
+            continue
+
         if not log_path.exists():
             print(f'  [不存在] {entry}')
             skipped += 1
             continue
 
-        update_log_stats(str(log_path), current_time, dry_run=args.dry_run)
-        print(f'  [OK] {entry}')
-        success += 1
+        if update_log_stats(str(log_path), current_time, dry_run=args.dry_run):
+            print(f'  [OK] {entry}')
+            success += 1
+        else:
+            print(f'  [失败] {entry}')
+            failed += 1
 
     print()
-    print(f'完成: {success} 个已更新, {skipped} 个不存在')
+    print(f'完成: {success} 个已更新, {skipped} 个跳过, {failed} 个失败')
 
     return 0
 
