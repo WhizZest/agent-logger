@@ -22,6 +22,41 @@ from datetime import datetime, timezone, timedelta, date
 
 from _yaml_utils import extract_yaml_frontmatter
 
+
+class CompactArrayEncoder(json.JSONEncoder):
+    def encode(self, o):
+        return self._encode(o, 0)
+
+    def _encode(self, o, level):
+        indent_per_level = self.indent if isinstance(self.indent, str) else ' ' * (self.indent or 0)
+        indent_str = indent_per_level * level
+        next_indent = indent_per_level * (level + 1)
+
+        if isinstance(o, dict):
+            if not o:
+                return '{}'
+            items = []
+            for k, v in o.items():
+                key_str = json.dumps(k, ensure_ascii=self.ensure_ascii)
+                val_str = self._encode(v, level + 1)
+                items.append(f'{next_indent}{key_str}: {val_str}')
+            return '{\n' + ',\n'.join(items) + '\n' + indent_str + '}'
+        elif isinstance(o, list):
+            items = []
+            for item in o:
+                items.append(self._encode(item, level))
+            return '[' + ', '.join(items) + ']'
+        elif isinstance(o, str):
+            return json.dumps(o, ensure_ascii=self.ensure_ascii)
+        elif isinstance(o, bool):
+            return 'true' if o else 'false'
+        elif isinstance(o, (int, float)):
+            return json.dumps(o, allow_nan=self.allow_nan)
+        elif o is None:
+            return 'null'
+        else:
+            return json.dumps(o, ensure_ascii=self.ensure_ascii, default=self.default, allow_nan=self.allow_nan)
+
 def filter_metadata(metadata, fields=None, show_all=False):
     """根据指定的字段过滤元数据，默认字段始终包含。
     返回 (filtered_dict, found_user_fields_set)"""
@@ -426,7 +461,7 @@ def main():
         save_as_md(metadata_list, output_file)
     else:
         with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(metadata_list, f, ensure_ascii=False, indent=2)
+            f.write(json.dumps(metadata_list, ensure_ascii=False, indent=2, cls=CompactArrayEncoder))
     
     print(f"\n完成！")
     print(f"已提取 {len(metadata_list)} 个文件的元信息")
