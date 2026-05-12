@@ -11,6 +11,7 @@
 
 import argparse
 import re
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -23,6 +24,38 @@ def detect_log_base(report_path):
         if parent.name == '.log':
             return str(parent)
     raise SystemExit(f'错误: 无法从报告路径中检测到 .log 目录: {report_path}')
+
+
+def find_in_workspace(filename, search_root):
+    """使用 fd 在 workspace 中搜索文件。
+
+    注意: 仅按文件名搜索，如果存在多个同名文件，返回的是 fd 找到的第一个结果。
+    这不影响判断正确性——预期路径下文件不存在即为非日志，无论 fd 找到哪个文件。
+    本函数依赖外部工具 fd（会同时尝试 fd 和 fdfind 两个二进制名），
+    均未安装时降级返回 None（标记为 [未找到]）。
+
+    Args:
+        filename: 要搜索的文件名（仅文件名，不含路径）
+        search_root: 搜索根目录
+
+    Returns:
+        str or None: 找到的第一个文件路径，未找到或 fd 不可用返回 None
+    """
+    for executable in ['fd', 'fdfind']:
+        try:
+            result = subprocess.run(
+                [executable, '--hidden', '--no-ignore', '--max-results', '1',
+                 '--glob', filename, str(search_root)],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                output = result.stdout.strip()
+                return output if output else None
+        except FileNotFoundError:
+            continue
+        except (subprocess.TimeoutExpired, OSError):
+            break
+    return None
 
 
 def update_log_stats(log_path, current_time, dry_run=False):
@@ -171,7 +204,15 @@ def main():
             continue
 
         if not log_path.exists():
-            print(f'  [不存在] {entry}')
+            filename = Path(entry).name
+            # 仅按文件名搜索，多个同名文件时 fd 返回第一个匹配。
+            # 无论匹配到哪个文件，[非日志] 的判断总是正确的——
+            # 预期路径下文件不存在，即非需更新的日志。
+            found = find_in_workspace(filename, log_base.parent)
+            if found:
+                print(f'  [非日志] {entry}')
+            else:
+                print(f'  [未找到] {entry}')
             skipped += 1
             continue
 
