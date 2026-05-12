@@ -300,3 +300,54 @@ class TestFindInWorkspace:
         with tempfile.TemporaryDirectory() as tmp:
             result = find_in_workspace('test.md', str(tmp))
             assert result is None
+
+
+class TestMainPathValidation:
+
+    SCRIPT = str(
+        Path(__file__).parent.parent
+        / 'skills' / 'log-memory-searcher' / 'scripts' / 'dream-stats-updater.py'
+    )
+
+    def _run(self, *args):
+        result = subprocess.run(
+            [sys.executable, self.SCRIPT, *args],
+            capture_output=True, text=True
+        )
+        return result
+
+    def test_report_relative_path_rejected(self):
+        result = self._run(
+            '--report', 'relative/path/report.md',
+            '--log-base', str(Path(tempfile.gettempdir())),
+        )
+        assert result.returncode != 0
+        assert '必须是绝对路径' in result.stdout
+
+    def test_log_base_relative_path_rejected(self):
+        with tempfile.NamedTemporaryFile(suffix='.md', delete=False) as f:
+            f.write(b'---\ntype: dream\npath_visited: []\n---\n')
+            report_path = f.name
+        try:
+            result = self._run(
+                '--report', report_path,
+                '--log-base', 'relative/path',
+            )
+            assert result.returncode != 0
+            assert '必须是绝对路径' in result.stdout
+        finally:
+            os.unlink(report_path)
+
+    def test_log_base_not_a_directory_rejected(self):
+        with tempfile.NamedTemporaryFile(suffix='.md', delete=False) as f:
+            f.write(b'---\ntype: dream\npath_visited: []\n---\n')
+            report_path = f.name
+        try:
+            result = self._run(
+                '--report', report_path,
+                '--log-base', report_path,
+            )
+            assert result.returncode != 0
+            assert '必须是一个存在的目录' in result.stdout
+        finally:
+            os.unlink(report_path)

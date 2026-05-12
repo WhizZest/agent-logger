@@ -157,6 +157,9 @@ def main():
     if not log_base.is_absolute():
         print(f'错误: --log-base 必须是绝对路径: {args.log_base}')
         return 1
+    if not log_base.is_dir():
+        print(f'错误: --log-base 必须是一个存在的目录: {args.log_base}')
+        return 1
 
     with open(report_path, 'r', encoding='utf-8') as f:
         content = f.read()
