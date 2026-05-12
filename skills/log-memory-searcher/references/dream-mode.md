@@ -458,7 +458,9 @@ path_visited:
 **推荐使用脚本自动化**：
 
 ```bash
-python <skill_dir>/scripts/dream-stats-updater.py --report <梦境报告路径>
+python <skill_dir>/scripts/dream-stats-updater.py \
+  --report <workspace>/.log/dreams/2026/05/13/dream-xxx.md \
+  --log-base <workspace>/.log/
 ```
 
 脚本自动从报告的 `path_visited` 提取文件列表，无需手动指定。支持 `--dry-run` 预览模式。
@@ -478,16 +480,6 @@ python <skill_dir>/scripts/dream-stats-updater.py --report <梦境报告路径>
 
 ⚠️ **关键规则**：报告模板中的「续梦意图」章节不是装饰——填写了它就意味着触发了输出5，必须同步追加 `dream-hints.yaml`。
 
-## 做梦模式的约束
-
-1. **wikilink 需满足两个条件**：(1) 能指明具体关系类型；(2) 关联有实质意义（不是表面相似）
-2. **偏好与最佳实践冲突时，以最佳实践为优先**：强化"好"的偏好（共享报告），暴露"不好"的供讨论（独立报告）
-3. **共享报告保持精炼**：降级时直接移除，在独立梦境报告中说明移除原因
-4. **非日志文档不参与统计，也不做修改**：修改建议写入独立梦境报告
-5. **默认不写新日志**：梦境报告放在 `dreams/` 目录，与日志区分
-6. **last_accessed 不因做梦而更新**：做梦的统计使用独立的 `dream_visit_count` 和 `last_dreamed` 字段，不污染原始日志的 `last_accessed` 字段
-7. **原始日志受 Git 保护**：做梦前检查 Git 状态，有未提交修改则提醒用户先提交
-
 ## 脚本参数速查
 
 ### dream-hint-selector.py
@@ -505,10 +497,10 @@ python <skill_dir>/scripts/dream-stats-updater.py --report <梦境报告路径>
 
 ```bash
 # 必需参数
---report, -r        梦境报告文件路径（必需）
+--report, -r        梦境报告文件路径，必须是绝对路径（必需）
+--log-base          日志根目录，必须是绝对路径（必需）
 
 # 可选参数
---log-base          日志根目录（默认从报告路径自动检测 .log 目录）
 --dry-run           仅预览，不实际修改文件
 --time              指定时间戳（默认使用系统本地时区）
 --help              显示帮助信息
