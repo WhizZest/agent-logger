@@ -31,7 +31,8 @@ def find_in_workspace(filename, search_root):
 
     注意: 仅按文件名搜索，如果存在多个同名文件，返回的是 fd 找到的第一个结果。
     这不影响判断正确性——预期路径下文件不存在即为非日志，无论 fd 找到哪个文件。
-    本函数依赖外部工具 fd，未安装时降级返回 None（标记为 [未找到]）。
+    本函数依赖外部工具 fd（会同时尝试 fd 和 fdfind 两个二进制名），
+    均未安装时降级返回 None（标记为 [未找到]）。
 
     Args:
         filename: 要搜索的文件名（仅文件名，不含路径）
@@ -40,16 +41,20 @@ def find_in_workspace(filename, search_root):
     Returns:
         str or None: 找到的第一个文件路径，未找到或 fd 不可用返回 None
     """
-    try:
-        result = subprocess.run(
-            ['fd', '--hidden', '--no-ignore', '--max-results', '1',
-             '--glob', filename, str(search_root)],
-            capture_output=True, text=True, timeout=10
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        pass
+    for executable in ['fd', 'fdfind']:
+        try:
+            result = subprocess.run(
+                [executable, '--hidden', '--no-ignore', '--max-results', '1',
+                 '--glob', filename, str(search_root)],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                output = result.stdout.strip()
+                return output if output else None
+        except FileNotFoundError:
+            continue
+        except (subprocess.TimeoutExpired, OSError):
+            break
     return None
 
 
