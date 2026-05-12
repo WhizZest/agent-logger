@@ -165,7 +165,7 @@ python <skill_dir>/scripts/dream-hint-selector.py \
 python <skill_dir>/scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search "error" \
-  --fields file_path \
+  --fields file_path title description created type tags  dream_visit_count last_dreamed \
   --format json \
   --limit 0
 ```
@@ -181,7 +181,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 python <skill_dir>/scripts/extract-log-metadata.py \
   --path <workspace>/.log/ \
   --search "性能|performance|优化" \
-  --fields file_path \
+  --fields file_path title description created type tags  dream_visit_count last_dreamed \
   --format json \
   --limit 0
 ```

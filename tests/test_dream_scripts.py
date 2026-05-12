@@ -3,6 +3,8 @@ import os
 import subprocess
 import importlib
 import tempfile
+import json
+import math
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,9 @@ from _yaml_utils import extract_yaml_frontmatter
 dream_stats_updater = importlib.import_module('dream-stats-updater')
 update_log_stats = dream_stats_updater.update_log_stats
 find_in_workspace = dream_stats_updater.find_in_workspace
+
+extract_log_metadata = importlib.import_module('extract-log-metadata')
+CompactArrayEncoder = extract_log_metadata.CompactArrayEncoder
 
 
 class TestExtractYamlFrontmatter:
@@ -351,3 +356,138 @@ class TestMainPathValidation:
             assert '必须是一个存在的目录' in result.stdout
         finally:
             os.unlink(report_path)
+
+
+class TestCompactArrayEncoder:
+
+    def _encode(self, obj):
+        return json.dumps(obj, ensure_ascii=False, indent=2, cls=CompactArrayEncoder)
+
+    def _roundtrip(self, obj):
+        encoded = self._encode(obj)
+        decoded = json.loads(encoded)
+        return encoded, decoded
+
+    def test_simple_dict_with_string_list(self):
+        obj = {
+            "title": "Test",
+            "tags": ["#a", "#b", "#c"],
+        }
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"tags": ["#a", "#b", "#c"]' in encoded
+
+    def test_empty_dict(self):
+        encoded, decoded = self._roundtrip({})
+        assert decoded == {}
+        assert encoded == '{}'
+
+    def test_empty_list(self):
+        encoded, decoded = self._roundtrip([])
+        assert decoded == []
+        assert encoded == '[]'
+
+    def test_empty_list_in_dict(self):
+        obj = {"items": []}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"items": []' in encoded
+
+    def test_boolean_values(self):
+        obj = {"active": True, "deleted": False}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"active": true' in encoded
+        assert '"deleted": false' in encoded
+
+    def test_null_value(self):
+        obj = {"value": None}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"value": null' in encoded
+
+    def test_integer_value(self):
+        obj = {"count": 42}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"count": 42' in encoded
+
+    def test_float_value(self):
+        obj = {"score": 3.14}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+
+    def test_nested_dict_in_list(self):
+        obj = {
+            "items": [
+                {"id": 1, "name": "foo"},
+                {"id": 2, "name": "bar"},
+            ],
+        }
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"items": [' in encoded
+
+    def test_top_level_list_of_dicts(self):
+        obj = [
+            {"title": "A", "tags": ["#x"]},
+            {"title": "B", "tags": ["#y"]},
+        ]
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"tags": ["#x"]' in encoded
+        assert '"tags": ["#y"]' in encoded
+
+    def test_mixed_types_in_list(self):
+        obj = {"mixed": ["str", 42, True, None]}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"mixed": ["str", 42, true, null]' in encoded
+
+    def test_special_float_inf(self):
+        obj = {"value": float('inf')}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+
+    def test_special_float_nan(self):
+        obj = {"value": float('nan')}
+        encoded, decoded = self._roundtrip(obj)
+        assert math.isnan(decoded["value"])
+
+    def test_special_float_neg_inf(self):
+        obj = {"value": float('-inf')}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+
+    def test_deeply_nested(self):
+        obj = {
+            "level1": {
+                "level2": {
+                    "tags": ["#deep"],
+                },
+            },
+        }
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"tags": ["#deep"]' in encoded
+
+    def test_unicode_strings(self):
+        obj = {"title": "中文测试", "tags": ["#中文", "#标签"]}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"tags": ["#中文", "#标签"]' in encoded
+
+    def test_string_with_special_chars(self):
+        obj = {"text": 'hello "world"'}
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+
+    def test_multiple_lists_in_dict(self):
+        obj = {
+            "tags": ["#a", "#b"],
+            "refs": ["x", "y"],
+        }
+        encoded, decoded = self._roundtrip(obj)
+        assert decoded == obj
+        assert '"tags": ["#a", "#b"]' in encoded
+        assert '"refs": ["x", "y"]' in encoded
