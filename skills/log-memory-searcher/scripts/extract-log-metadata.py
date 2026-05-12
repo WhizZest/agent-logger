@@ -28,8 +28,9 @@ class CompactArrayEncoder(json.JSONEncoder):
         return self._encode(o, 0)
 
     def _encode(self, o, level):
-        indent_str = ' ' * (level * self.indent)
-        next_indent = ' ' * ((level + 1) * self.indent)
+        indent_per_level = self.indent if isinstance(self.indent, str) else ' ' * (self.indent or 0)
+        indent_str = indent_per_level * level
+        next_indent = indent_per_level * (level + 1)
 
         if isinstance(o, dict):
             if not o:
@@ -43,18 +44,18 @@ class CompactArrayEncoder(json.JSONEncoder):
         elif isinstance(o, list):
             items = []
             for item in o:
-                items.append(self._encode(item, 0))
+                items.append(self._encode(item, level))
             return '[' + ', '.join(items) + ']'
         elif isinstance(o, str):
             return json.dumps(o, ensure_ascii=self.ensure_ascii)
         elif isinstance(o, bool):
             return 'true' if o else 'false'
         elif isinstance(o, (int, float)):
-            return json.dumps(o)
+            return json.dumps(o, allow_nan=self.allow_nan)
         elif o is None:
             return 'null'
         else:
-            return json.dumps(o, ensure_ascii=self.ensure_ascii)
+            return json.dumps(o, ensure_ascii=self.ensure_ascii, default=self.default, allow_nan=self.allow_nan)
 
 def filter_metadata(metadata, fields=None, show_all=False):
     """根据指定的字段过滤元数据，默认字段始终包含。
