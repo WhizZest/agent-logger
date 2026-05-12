@@ -13,7 +13,6 @@ from _yaml_utils import extract_yaml_frontmatter
 
 dream_stats_updater = importlib.import_module('dream-stats-updater')
 update_log_stats = dream_stats_updater.update_log_stats
-detect_log_base = dream_stats_updater.detect_log_base
 find_in_workspace = dream_stats_updater.find_in_workspace
 
 
@@ -270,29 +269,6 @@ class TestUpdateLogStats:
     def test_file_not_found(self):
         result = update_log_stats('/nonexistent/path.md', '2026-05-12T12:00:00+08:00')
         assert result is False
-
-
-class TestDetectLogBase:
-
-    def test_finds_dot_log_in_path(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            log_dir = Path(tmp) / '.log' / 'dreams' / '2026' / '05'
-            log_dir.mkdir(parents=True)
-            report = log_dir / 'dream-test.md'
-            report.write_text('---\ntype: dream\n---')
-
-            result = detect_log_base(str(report))
-            expected = str((Path(tmp) / '.log').resolve())
-            assert Path(result).resolve() == Path(expected).resolve()
-
-    def test_no_dot_log_raises(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            report = Path(tmp) / 'some' / 'deep' / 'path' / 'report.md'
-            report.parent.mkdir(parents=True)
-            report.write_text('---\ntype: dream\n---')
-
-            with pytest.raises(SystemExit):
-                detect_log_base(str(report))
 
 
 class TestFindInWorkspace:

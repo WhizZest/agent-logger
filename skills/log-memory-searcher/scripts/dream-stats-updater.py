@@ -4,9 +4,8 @@
 从梦境报告中提取 path_visited，批量更新日志的 dream_visit_count 和 last_dreamed
 
 使用方法:
-    python dream-stats-updater.py --report <梦境报告路径>
-    python dream-stats-updater.py --report <梦境报告路径> --log-base <日志根目录>
-    python dream-stats-updater.py --report <梦境报告路径> --dry-run
+    python dream-stats-updater.py --report <梦境报告绝对路径> --log-base <日志根目录绝对路径>
+    python dream-stats-updater.py --report <梦境报告绝对路径> --log-base <日志根目录绝对路径> --dry-run
 """
 
 import argparse
@@ -16,14 +15,6 @@ from pathlib import Path
 from datetime import datetime
 
 from _yaml_utils import extract_yaml_frontmatter
-
-
-def detect_log_base(report_path):
-    report = Path(report_path).resolve()
-    for parent in report.parents:
-        if parent.name == '.log':
-            return str(parent)
-    raise SystemExit(f'错误: 无法从报告路径中检测到 .log 目录: {report_path}')
 
 
 def find_in_workspace(filename, search_root):
@@ -134,12 +125,12 @@ def main():
     parser.add_argument(
         '--report', '-r',
         required=True,
-        help='梦境报告文件路径'
+        help='梦境报告文件路径，必须是绝对路径'
     )
     parser.add_argument(
         '--log-base',
-        default=None,
-        help='日志根目录（默认从报告路径自动检测 .log 目录）'
+        required=True,
+        help='日志根目录（.log/ 目录的绝对路径）'
     )
     parser.add_argument(
         '--dry-run',
@@ -155,8 +146,16 @@ def main():
     args = parser.parse_args()
 
     report_path = Path(args.report)
+    if not report_path.is_absolute():
+        print(f'错误: --report 必须是绝对路径: {args.report}')
+        return 1
     if not report_path.exists():
         print(f'错误: 报告文件不存在: {report_path}')
+        return 1
+
+    log_base = Path(args.log_base)
+    if not log_base.is_absolute():
+        print(f'错误: --log-base 必须是绝对路径: {args.log_base}')
         return 1
 
     with open(report_path, 'r', encoding='utf-8') as f:
@@ -171,8 +170,6 @@ def main():
     if not path_visited:
         print('错误: 报告中未找到 path_visited 字段')
         return 1
-
-    log_base = Path(args.log_base) if args.log_base else Path(detect_log_base(report_path))
 
     if args.time:
         current_time = args.time
