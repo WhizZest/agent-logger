@@ -268,8 +268,7 @@ python <skill_dir>/scripts/extract-log-metadata.py \
 - 注意日志的时间戳（created vs last_accessed）
 
 ⚠️ **时间戳更新**：
-- 阅读相关日志后，如果认为符合需求，必须更新或添加 YAML front matter 中的 `last_accessed` 字段
-- 编辑修改日志内容后，也必须更新或添加 YAML front matter 中的 `last_accessed` 字段
+- 阅读或编辑日志后，如果认为其内容对当前任务有实质价值，更新或添加 YAML front matter 中的 `last_accessed` 字段
 - 必须获取系统当前真实时间（ISO 8601 format with timezone）
 - 严禁猜测时间或使用过期时间
 
