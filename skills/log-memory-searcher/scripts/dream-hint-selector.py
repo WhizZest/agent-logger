@@ -252,6 +252,11 @@ def select_hint(dreams_path, debug=False):
             print("[DEBUG] 所有提示都在冷却期，选择无提示")
         return {'selected': None}
 
+    if random.random() < NO_HINT_PROBABILITY:
+        if debug:
+            print(f"[DEBUG] 无提示（固定概率 {NO_HINT_PROBABILITY*100:.0f}%）")
+        return {'selected': None}
+
     candidates = []
     weights = []
 
@@ -261,15 +266,6 @@ def select_hint(dreams_path, debug=False):
         weights.append(w)
         if debug:
             print(f"[DEBUG] 提示 {hint.get('description')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
-
-    hint_total = sum(weights)
-    no_hint_weight = hint_total * NO_HINT_PROBABILITY / (1 - NO_HINT_PROBABILITY) if hint_total > 0 else 1
-
-    candidates.append(None)
-    weights.append(no_hint_weight)
-
-    if debug:
-        print(f"[DEBUG] 无提示选项: weight={no_hint_weight:.2f} (固定概率 {NO_HINT_PROBABILITY*100:.0f}%)")
 
     total = sum(weights)
     r = random.uniform(0, total)

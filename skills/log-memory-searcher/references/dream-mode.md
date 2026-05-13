@@ -97,7 +97,7 @@ hints:
    - `cooldown_days > 0`：`weight = priority × (1 + days_since_cooldown / cooldown_days)`
      - `last_used` 为 null 时：`days_since_cooldown = cooldown_days`（相当于刚过冷却期）
    - `cooldown_days == 0`（disposable 提示）：`weight = priority`（常数）
-   - "无提示"选项：固定概率 = 30%（权重动态计算为 `hint_total × 0.3 / 0.7`，修改 `NO_HINT_PROBABILITY` 常量即可调整）
+   - "无提示"选项：固定概率 = 30%（通过 `random.random() < NO_HINT_PROBABILITY` 独立判断，修改 `NO_HINT_PROBABILITY` 常量即可调整）
 3. **按权重随机选择**
 4. **更新状态**：选中提示的 `last_used` 更新为当前时间；`disposable: true` 的提示自动删除
 

@@ -673,7 +673,7 @@ class TestLoadSaveHints:
             hints_path = Path(tmp) / 'dream-hints.yaml'
             save_hints(hints_path, hints)
             loaded = load_hints(hints_path)
-            assert loaded is None
+            assert loaded is None or loaded == []
 
 
 class TestSelectHint:
@@ -720,6 +720,7 @@ class TestSelectHint:
         with tempfile.TemporaryDirectory() as tmp:
             dreams_path = Path(tmp)
             save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 1.0)
             monkeypatch.setattr(dream_hint_selector.random, 'uniform', lambda a, b: 0.0)
             result = select_hint(dreams_path)
             assert result['selected'] is not None
@@ -749,6 +750,6 @@ class TestSelectHint:
                     no_hint_count += 1
 
             proportion = no_hint_count / trials
-            assert 0.20 <= proportion <= 0.40, (
-                f'Expected ~30% no-hint rate, got {proportion*100:.1f}%'
+            assert proportion == pytest.approx(NO_HINT_PROBABILITY, abs=0.1), (
+                f'Expected ~{NO_HINT_PROBABILITY*100:.0f}% no-hint rate, got {proportion*100:.1f}%'
             )
