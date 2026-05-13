@@ -19,7 +19,7 @@ except ImportError:
     yaml = None
 
 
-NO_HINT_WEIGHT = 2
+NO_HINT_PROBABILITY = 0.3
 
 
 def _parse_yaml_simple(content):
@@ -252,6 +252,11 @@ def select_hint(dreams_path, debug=False):
             print("[DEBUG] 所有提示都在冷却期，选择无提示")
         return {'selected': None}
 
+    if random.random() < NO_HINT_PROBABILITY:
+        if debug:
+            print(f"[DEBUG] 无提示（固定概率 {NO_HINT_PROBABILITY*100:.0f}%）")
+        return {'selected': None}
+
     candidates = []
     weights = []
 
@@ -261,12 +266,6 @@ def select_hint(dreams_path, debug=False):
         weights.append(w)
         if debug:
             print(f"[DEBUG] 提示 {hint.get('description')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
-
-    candidates.append(None)
-    weights.append(NO_HINT_WEIGHT)
-
-    if debug:
-        print(f"[DEBUG] 无提示选项: weight={NO_HINT_WEIGHT}")
 
     total = sum(weights)
     r = random.uniform(0, total)

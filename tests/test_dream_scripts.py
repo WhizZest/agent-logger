@@ -491,3 +491,265 @@ class TestCompactArrayEncoder:
         assert decoded == obj
         assert '"tags": ["#a", "#b"]' in encoded
         assert '"refs": ["x", "y"]' in encoded
+
+
+dream_hint_selector = importlib.import_module('dream-hint-selector')
+compute_weight = dream_hint_selector.compute_weight
+is_in_cooldown = dream_hint_selector.is_in_cooldown
+_parse_iso_datetime = dream_hint_selector._parse_iso_datetime
+load_hints = dream_hint_selector.load_hints
+save_hints = dream_hint_selector.save_hints
+select_hint = dream_hint_selector.select_hint
+NO_HINT_PROBABILITY = dream_hint_selector.NO_HINT_PROBABILITY
+
+
+class TestParseIsoDatetime:
+
+    def test_valid_iso_with_timezone(self):
+        result = _parse_iso_datetime('2026-05-14T12:00:00+08:00')
+        assert result is not None
+        assert result.year == 2026
+        assert result.month == 5
+        assert result.day == 14
+
+    def test_valid_iso_with_z(self):
+        result = _parse_iso_datetime('2026-05-14T12:00:00Z')
+        assert result is not None
+        assert result.hour == 12
+
+    def test_none_returns_none(self):
+        assert _parse_iso_datetime(None) is None
+
+    def test_null_string_returns_none(self):
+        assert _parse_iso_datetime('null') is None
+        assert _parse_iso_datetime('None') is None
+
+    def test_empty_string_returns_none(self):
+        assert _parse_iso_datetime('') is None
+
+    def test_invalid_string_returns_none(self):
+        assert _parse_iso_datetime('not-a-date') is None
+
+    def test_datetime_object_passthrough(self):
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        dt = datetime(2026, 5, 14, 12, 0, 0, tzinfo=tz)
+        result = _parse_iso_datetime(dt)
+        assert result == dt
+
+
+class TestComputeWeight:
+
+    def test_disposable_hint_returns_priority(self):
+        hint = {'priority': 3, 'cooldown_days': 0}
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        assert compute_weight(hint, now) == 3.0
+
+    def test_disposable_hint_default_priority(self):
+        hint = {'cooldown_days': 0}
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        assert compute_weight(hint, now) == 1.0
+
+    def test_persistent_hint_never_used(self):
+        hint = {'priority': 2, 'cooldown_days': 10, 'last_used': None}
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        weight = compute_weight(hint, now)
+        assert weight == 2.0 * (1 + 10.0 / 10.0)
+        assert weight == 4.0
+
+    def test_persistent_hint_past_cooldown(self):
+        hint = {
+            'priority': 2,
+            'cooldown_days': 10,
+            'last_used': '2026-05-01T00:00:00+08:00',
+        }
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        now = datetime(2026, 5, 14, 0, 0, 0, tzinfo=tz)
+        weight = compute_weight(hint, now)
+        elapsed = 13.0
+        days_since = elapsed - 10
+        expected = 2.0 * (1 + days_since / 10.0)
+        assert weight == pytest.approx(expected)
+
+    def test_persistent_hint_in_cooldown_still_returns_weight(self):
+        hint = {
+            'priority': 2,
+            'cooldown_days': 10,
+            'last_used': '2026-05-10T00:00:00+08:00',
+        }
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        now = datetime(2026, 5, 14, 0, 0, 0, tzinfo=tz)
+        weight = compute_weight(hint, now)
+        elapsed = 4.0
+        days_since = max(0, elapsed - 10)
+        expected = 2.0 * (1 + days_since / 10.0)
+        assert weight == pytest.approx(2.0)
+
+    def test_persistent_hint_invalid_last_used(self):
+        hint = {
+            'priority': 2,
+            'cooldown_days': 10,
+            'last_used': 'not-a-date',
+        }
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        weight = compute_weight(hint, now)
+        assert weight == 2.0
+
+
+class TestIsInCooldown:
+
+    def test_disposable_hint_never_in_cooldown(self):
+        hint = {'cooldown_days': 0, 'last_used': '2026-05-14T00:00:00+08:00'}
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        assert is_in_cooldown(hint, now) is False
+
+    def test_persistent_hint_in_cooldown(self):
+        hint = {
+            'cooldown_days': 10,
+            'last_used': '2026-05-10T00:00:00+08:00',
+        }
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        now = datetime(2026, 5, 14, 0, 0, 0, tzinfo=tz)
+        assert is_in_cooldown(hint, now) is True
+
+    def test_persistent_hint_past_cooldown(self):
+        hint = {
+            'cooldown_days': 10,
+            'last_used': '2026-05-01T00:00:00+08:00',
+        }
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        now = datetime(2026, 5, 14, 0, 0, 0, tzinfo=tz)
+        assert is_in_cooldown(hint, now) is False
+
+    def test_never_used_not_in_cooldown(self):
+        hint = {'cooldown_days': 10, 'last_used': None}
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
+        assert is_in_cooldown(hint, now) is False
+
+
+class TestLoadSaveHints:
+
+    def test_load_nonexistent_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = load_hints(Path(tmp) / 'nonexistent.yaml')
+            assert result is None
+
+    def test_save_and_load_roundtrip(self):
+        hints = [
+            {
+                'description': 'test hint',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 2,
+                'last_used': None,
+                'disposable': True,
+                'associated_reports': ['2026/05/14/dream-test.md'],
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            hints_path = Path(tmp) / 'dream-hints.yaml'
+            save_hints(hints_path, hints)
+            loaded = load_hints(hints_path)
+            assert loaded is not None
+            assert len(loaded) == 1
+            assert loaded[0]['description'] == 'test hint'
+            assert loaded[0]['type'] == 'perspective'
+            assert loaded[0]['priority'] == 2
+            assert loaded[0]['disposable'] is True
+
+    def test_save_and_load_empty_hints(self):
+        hints = []
+        with tempfile.TemporaryDirectory() as tmp:
+            hints_path = Path(tmp) / 'dream-hints.yaml'
+            save_hints(hints_path, hints)
+            loaded = load_hints(hints_path)
+            assert loaded is None or loaded == []
+
+
+class TestSelectHint:
+
+    def test_no_hints_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            result = select_hint(dreams_path)
+            assert result == {'selected': None}
+
+    def test_empty_hints_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', [])
+            result = select_hint(dreams_path)
+            assert result == {'selected': None}
+
+    def test_all_in_cooldown_returns_none(self):
+        hints = [
+            {
+                'description': 'cooling down',
+                'type': 'task',
+                'cooldown_days': 30,
+                'priority': 3,
+                'last_used': '2026-05-14T00:00:00+08:00',
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            result = select_hint(dreams_path)
+            assert result == {'selected': None}
+
+    def test_single_available_hint_is_selected(self, monkeypatch):
+        hints = [
+            {
+                'description': 'only hint',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 3,
+                'last_used': None,
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 1.0)
+            monkeypatch.setattr(dream_hint_selector.random, 'uniform', lambda a, b: 0.0)
+            result = select_hint(dreams_path)
+            assert result['selected'] is not None
+            assert result['selected']['description'] == 'only hint'
+
+    def test_no_hint_probability_is_fixed(self):
+        hints = []
+        for i in range(10):
+            hints.append({
+                'description': f'hint {i}',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 2,
+                'last_used': None,
+            })
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+
+            no_hint_count = 0
+            trials = 500
+            for _ in range(trials):
+                save_hints(dreams_path / 'dream-hints.yaml', hints)
+                result = select_hint(dreams_path)
+                if result['selected'] is None:
+                    no_hint_count += 1
+
+            proportion = no_hint_count / trials
+            assert proportion == pytest.approx(NO_HINT_PROBABILITY, abs=0.1), (
+                f'Expected ~{NO_HINT_PROBABILITY*100:.0f}% no-hint rate, got {proportion*100:.1f}%'
+            )
