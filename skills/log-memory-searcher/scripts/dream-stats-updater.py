@@ -205,14 +205,18 @@ def main():
 
         if not log_path.exists():
             filename = Path(entry).name
-            # 仅按文件名搜索，多个同名文件时 fd 返回第一个匹配。
-            # 无论匹配到哪个文件，[非日志] 的判断总是正确的——
-            # 预期路径下文件不存在，即非需更新的日志。
             found = find_in_workspace(filename, log_base.parent)
             if found:
                 print(f'  [非日志] {entry}')
             else:
                 print(f'  [未找到] {entry}')
+            skipped += 1
+            continue
+
+        rel_path = log_path.relative_to(resolved_base)
+        # 梦境报告不是日志，不应统计 dream_visit_count
+        if rel_path.parts[0] == 'dreams':
+            print(f'  [非日志] {entry}')
             skipped += 1
             continue
 

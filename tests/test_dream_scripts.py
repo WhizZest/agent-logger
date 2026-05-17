@@ -358,6 +358,102 @@ class TestMainPathValidation:
             os.unlink(report_path)
 
 
+class TestDreamPathFiltering:
+
+    SCRIPT = str(
+        Path(__file__).parent.parent
+        / 'skills' / 'log-memory-searcher' / 'scripts' / 'dream-stats-updater.py'
+    )
+
+    def _make_log_base(self, tmp_path):
+        log_base = tmp_path / '.log'
+        log_dir = log_base / '2026' / '05' / '17'
+        log_dir.mkdir(parents=True)
+        dream_dir = log_base / 'dreams' / '2026' / '05' / '17'
+        dream_dir.mkdir(parents=True)
+        return log_base, log_dir, dream_dir
+
+    def _make_report(self, tmp_path, entries):
+        lines = '\n'.join(f'  - "{e}"' for e in entries)
+        report = tmp_path / 'report.md'
+        report.write_text(
+            f'---\ntype: dream\npath_visited:\n{lines}\n---\n\n# Dream\n',
+            encoding='utf-8'
+        )
+        return report
+
+    def _run(self, report, log_base, dry_run=False):
+        args = [sys.executable, self.SCRIPT, '--report', str(report),
+                '--log-base', str(log_base)]
+        if dry_run:
+            args.append('--dry-run')
+        return subprocess.run(args, capture_output=True, text=True)
+
+    def test_dream_report_path_skipped_in_dry_run(self, tmp_path):
+        log_base, log_dir, dream_dir = self._make_log_base(tmp_path)
+
+        (log_dir / 'log-test.md').write_text(
+            '---\ntitle: test\ndream_visit_count: 0\n---\n\n# Log\n', encoding='utf-8')
+        (dream_dir / 'dream-old.md').write_text(
+            '---\ntype: dream\n---\n\n# Old Dream\n', encoding='utf-8')
+
+        report = self._make_report(tmp_path, [
+            '2026/05/17/log-test.md',
+            'dreams/2026/05/17/dream-old.md',
+        ])
+
+        result = self._run(report, log_base, dry_run=True)
+
+        assert result.returncode == 0
+        assert '[非日志] dreams/2026/05/17/dream-old.md' in result.stdout
+        assert '[OK] 2026/05/17/log-test.md' in result.stdout
+        assert '完成: 1 个已更新, 1 个跳过, 0 个失败' in result.stdout
+
+    def test_dream_report_path_not_modified(self, tmp_path):
+        log_base, log_dir, dream_dir = self._make_log_base(tmp_path)
+
+        (log_dir / 'log-test.md').write_text(
+            '---\ntitle: test\ndream_visit_count: 0\n---\n\n# Log\n', encoding='utf-8')
+        dream_original = '---\ntype: dream\n---\n\n# Old Dream\n'
+        (dream_dir / 'dream-old.md').write_text(dream_original, encoding='utf-8')
+
+        report = self._make_report(tmp_path, [
+            '2026/05/17/log-test.md',
+            'dreams/2026/05/17/dream-old.md',
+        ])
+
+        result = self._run(report, log_base)
+
+        assert result.returncode == 0
+        assert '[非日志] dreams/2026/05/17/dream-old.md' in result.stdout
+        assert '[OK] 2026/05/17/log-test.md' in result.stdout
+
+        log_content = (log_dir / 'log-test.md').read_text(encoding='utf-8')
+        assert 'dream_visit_count: 1' in log_content
+
+        dream_content = (dream_dir / 'dream-old.md').read_text(encoding='utf-8')
+        assert dream_content == dream_original
+
+    def test_nested_dreams_path_also_skipped(self, tmp_path):
+        log_base, log_dir, dream_dir = self._make_log_base(tmp_path)
+
+        (log_dir / 'log-test.md').write_text(
+            '---\ntitle: test\ndream_visit_count: 0\n---\n\n# Log\n', encoding='utf-8')
+        dream_original = '---\ntype: dream\n---\n\n# Nested\n'
+        (dream_dir / 'nested.md').write_text(dream_original, encoding='utf-8')
+
+        report = self._make_report(tmp_path, [
+            '2026/05/17/log-test.md',
+            'dreams/2026/05/17/nested.md',
+        ])
+
+        result = self._run(report, log_base)
+
+        assert result.returncode == 0
+        assert '[非日志] dreams/2026/05/17/nested.md' in result.stdout
+        assert (dream_dir / 'nested.md').read_text(encoding='utf-8') == dream_original
+
+
 class TestCompactArrayEncoder:
 
     def _encode(self, obj):
