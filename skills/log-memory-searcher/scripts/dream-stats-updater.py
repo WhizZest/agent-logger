@@ -215,7 +215,7 @@ def main():
 
         rel_path = log_path.relative_to(resolved_base)
         # 梦境报告不是日志，不应统计 dream_visit_count
-        if rel_path.parts[0] == 'dreams':
+        if rel_path.parts and rel_path.parts[0] == 'dreams':
             print(f'  [非日志] {entry}')
             skipped += 1
             continue
