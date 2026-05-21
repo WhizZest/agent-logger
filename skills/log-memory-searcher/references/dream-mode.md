@@ -54,25 +54,25 @@ hints:
     description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
     cooldown_days: 7
     priority: 3
-    last_used: null
+    cooldown_start: null
 
   - type: task
     description: "检索所有 learning 日志，看是否有重复学习"
     cooldown_days: 14
     priority: 2
-    last_used: "2026-04-20T08:00:00+08:00"
+    cooldown_start: "2026-04-20T08:00:00+08:00"
 
   - type: perspective
     description: "游走时关注性能相关的内容和模式"
     cooldown_days: 3
     priority: 1
-    last_used: null
+    cooldown_start: null
 
   - type: perspective
     description: "继续探索数据库优化和日志压缩的关联"
     cooldown_days: 0
     priority: 3
-    last_used: null
+    cooldown_start: null
     disposable: true
     associated_reports:
       - "2026/05/07/dream-db-optimization.md"
@@ -86,7 +86,7 @@ hints:
 | `description` | 是 | 提示内容，自然语言描述，同时作为唯一标识 |
 | `cooldown_days` | 是 | 冷却天数，0 表示无冷却 |
 | `priority` | 是 | 优先级数值，正整数，推荐 1-3 |
-| `last_used` | 是 | 上次使用时间（ISO 8601），null 表示未使用过 |
+| `cooldown_start` | 是 | 冷却起始时间（ISO 8601），null 表示冷却从未开始 |
 | `disposable` | 否 | 默认 false。true 表示用一次后自动删除（即续梦提示） |
 | `associated_reports` | 否 | 仅用于 disposable 提示。产生该提示的梦境报告路径列表（相对于 `.log/dreams/`），供下游梦境追溯关联 |
 
@@ -95,11 +95,11 @@ hints:
 1. **过滤**：排除冷却期内的提示
 2. **计算权重**：
    - `cooldown_days > 0`：`weight = priority × (1 + days_since_cooldown / cooldown_days)`
-     - `last_used` 为 null 时：`days_since_cooldown = cooldown_days`（相当于刚过冷却期）
+     - `cooldown_start` 为 null 时：`days_since_cooldown = cooldown_days`（相当于刚过冷却期）
    - `cooldown_days == 0`（disposable 提示）：`weight = priority`（常数）
    - "无提示"选项：固定概率 = 30%（通过 `random.random() < NO_HINT_PROBABILITY` 独立判断，修改 `NO_HINT_PROBABILITY` 常量即可调整）
 3. **按权重随机选择**
-4. **更新状态**：选中提示的 `last_used` 更新为当前时间；`disposable: true` 的提示自动删除
+4. **更新状态**：选中提示的 `cooldown_start` 更新为当前时间；`disposable: true` 的提示自动删除
 
 ### 维护方式
 
@@ -123,7 +123,7 @@ hints:
     description: "检索所有 error 日志，看错误是否随时间降低，哪些屡教不改"
     cooldown_days: 7
     priority: 3
-    last_used: null
+    cooldown_start: null
 ```
 
 ## 工作流程
@@ -444,7 +444,7 @@ path_visited:
     description: "<续梦描述>"
     cooldown_days: 0
     priority: 3
-    last_used: null
+    cooldown_start: null
     disposable: true
     associated_reports:
       - "<本次梦境报告路径>"
@@ -508,6 +508,7 @@ python <skill_dir>/scripts/dream-stats-updater.py \
 
 # 可选参数
 --debug, -d         显示详细调试信息
+--dry-run           仅预览选择结果，不修改文件
 --help              显示帮助信息
 ```
 
