@@ -649,7 +649,7 @@ class TestComputeWeight:
         assert compute_weight(hint, now) == 1.0
 
     def test_persistent_hint_never_used(self):
-        hint = {'priority': 2, 'cooldown_days': 10, 'last_used': None}
+        hint = {'priority': 2, 'cooldown_days': 10, 'cooldown_start': None}
         from datetime import datetime, timezone, timedelta
         now = datetime.now(timezone(timedelta(hours=8)))
         weight = compute_weight(hint, now)
@@ -660,7 +660,7 @@ class TestComputeWeight:
         hint = {
             'priority': 2,
             'cooldown_days': 10,
-            'last_used': '2026-05-01T00:00:00+08:00',
+            'cooldown_start': '2026-05-01T00:00:00+08:00',
         }
         from datetime import datetime, timezone, timedelta
         tz = timezone(timedelta(hours=8))
@@ -675,7 +675,7 @@ class TestComputeWeight:
         hint = {
             'priority': 2,
             'cooldown_days': 10,
-            'last_used': '2026-05-10T00:00:00+08:00',
+            'cooldown_start': '2026-05-10T00:00:00+08:00',
         }
         from datetime import datetime, timezone, timedelta
         tz = timezone(timedelta(hours=8))
@@ -686,11 +686,11 @@ class TestComputeWeight:
         expected = 2.0 * (1 + days_since / 10.0)
         assert weight == pytest.approx(2.0)
 
-    def test_persistent_hint_invalid_last_used(self):
+    def test_persistent_hint_invalid_cooldown_start(self):
         hint = {
             'priority': 2,
             'cooldown_days': 10,
-            'last_used': 'not-a-date',
+            'cooldown_start': 'not-a-date',
         }
         from datetime import datetime, timezone, timedelta
         now = datetime.now(timezone(timedelta(hours=8)))
@@ -701,7 +701,7 @@ class TestComputeWeight:
 class TestIsInCooldown:
 
     def test_disposable_hint_never_in_cooldown(self):
-        hint = {'cooldown_days': 0, 'last_used': '2026-05-14T00:00:00+08:00'}
+        hint = {'cooldown_days': 0, 'cooldown_start': '2026-05-14T00:00:00+08:00'}
         from datetime import datetime, timezone, timedelta
         now = datetime.now(timezone(timedelta(hours=8)))
         assert is_in_cooldown(hint, now) is False
@@ -709,7 +709,7 @@ class TestIsInCooldown:
     def test_persistent_hint_in_cooldown(self):
         hint = {
             'cooldown_days': 10,
-            'last_used': '2026-05-10T00:00:00+08:00',
+            'cooldown_start': '2026-05-10T00:00:00+08:00',
         }
         from datetime import datetime, timezone, timedelta
         tz = timezone(timedelta(hours=8))
@@ -719,7 +719,7 @@ class TestIsInCooldown:
     def test_persistent_hint_past_cooldown(self):
         hint = {
             'cooldown_days': 10,
-            'last_used': '2026-05-01T00:00:00+08:00',
+            'cooldown_start': '2026-05-01T00:00:00+08:00',
         }
         from datetime import datetime, timezone, timedelta
         tz = timezone(timedelta(hours=8))
@@ -727,7 +727,7 @@ class TestIsInCooldown:
         assert is_in_cooldown(hint, now) is False
 
     def test_never_used_not_in_cooldown(self):
-        hint = {'cooldown_days': 10, 'last_used': None}
+        hint = {'cooldown_days': 10, 'cooldown_start': None}
         from datetime import datetime, timezone, timedelta
         now = datetime.now(timezone(timedelta(hours=8)))
         assert is_in_cooldown(hint, now) is False
@@ -747,7 +747,7 @@ class TestLoadSaveHints:
                 'type': 'perspective',
                 'cooldown_days': 0,
                 'priority': 2,
-                'last_used': None,
+                'cooldown_start': None,
                 'disposable': True,
                 'associated_reports': ['2026/05/14/dream-test.md'],
             },
@@ -794,7 +794,7 @@ class TestSelectHint:
                 'type': 'task',
                 'cooldown_days': 30,
                 'priority': 3,
-                'last_used': '2026-05-14T00:00:00+08:00',
+                'cooldown_start': '2026-05-14T00:00:00+08:00',
             },
         ]
         with tempfile.TemporaryDirectory() as tmp:
@@ -810,7 +810,7 @@ class TestSelectHint:
                 'type': 'perspective',
                 'cooldown_days': 0,
                 'priority': 3,
-                'last_used': None,
+                'cooldown_start': None,
             },
         ]
         with tempfile.TemporaryDirectory() as tmp:
@@ -830,7 +830,7 @@ class TestSelectHint:
                 'type': 'perspective',
                 'cooldown_days': 0,
                 'priority': 2,
-                'last_used': None,
+                'cooldown_start': None,
             })
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -849,3 +849,78 @@ class TestSelectHint:
             assert proportion == pytest.approx(NO_HINT_PROBABILITY, abs=0.1), (
                 f'Expected ~{NO_HINT_PROBABILITY*100:.0f}% no-hint rate, got {proportion*100:.1f}%'
             )
+
+    def test_dry_run_disposable_not_deleted(self, monkeypatch):
+        hints = [
+            {
+                'description': 'disposable dry',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 3,
+                'cooldown_start': None,
+                'disposable': True,
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 1.0)
+            monkeypatch.setattr(dream_hint_selector.random, 'uniform', lambda a, b: 0.0)
+            result = select_hint(dreams_path, dry_run=True)
+            assert result['selected'] is not None
+            assert result['selected']['description'] == 'disposable dry'
+            assert result['dry_run'] is True
+            assert result['would_delete'] is True
+            assert result['would_update_cooldown'] is False
+
+            reloaded = load_hints(dreams_path / 'dream-hints.yaml')
+            assert len(reloaded) == 1
+            assert reloaded[0]['cooldown_start'] is None
+
+    def test_dry_run_persistent_not_updated(self, monkeypatch):
+        hints = [
+            {
+                'description': 'persistent dry',
+                'type': 'task',
+                'cooldown_days': 10,
+                'priority': 2,
+                'cooldown_start': None,
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 1.0)
+            monkeypatch.setattr(dream_hint_selector.random, 'uniform', lambda a, b: 0.0)
+            result = select_hint(dreams_path, dry_run=True)
+            assert result['selected'] is not None
+            assert result['selected']['description'] == 'persistent dry'
+            assert result['dry_run'] is True
+            assert result['would_delete'] is False
+            assert result['would_update_cooldown'] is True
+
+            reloaded = load_hints(dreams_path / 'dream-hints.yaml')
+            assert len(reloaded) == 1
+            assert reloaded[0]['cooldown_start'] is None
+
+    def test_dry_run_no_hint_probability(self):
+        hints = [
+            {
+                'description': 'hint',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 2,
+                'cooldown_start': None,
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            result = select_hint(dreams_path, dry_run=True)
+            if result['selected'] is None:
+                assert 'dry_run' not in result
+            elif result.get('dry_run'):
+                assert result['would_delete'] or result['would_update_cooldown']
+
+            reloaded = load_hints(dreams_path / 'dream-hints.yaml')
+            assert len(reloaded) == 1

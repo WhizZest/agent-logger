@@ -6,6 +6,7 @@
 使用方法:
     python dream-hint-selector.py --dreams-path <workspace>/.log/dreams/
     python dream-hint-selector.py --dreams-path <workspace>/.log/dreams/ --debug
+    python dream-hint-selector.py --dreams-path <workspace>/.log/dreams/ --dry-run
 """
 
 import argparse
@@ -71,7 +72,7 @@ def _parse_yaml_simple(content):
                             val = 1
                     elif key == 'disposable':
                         val = val.lower() in ('true', 'yes', '1')
-                    elif key == 'last_used':
+                    elif key == 'cooldown_start':
                         if val in ('null', 'None', ''):
                             val = None
                     elif key == 'associated_reports':
@@ -121,19 +122,19 @@ def load_hints(hints_path):
     return _parse_yaml_simple(content)
 
 
-def _normalize_last_used(hints):
+def _normalize_cooldown_start(hints):
     for hint in hints:
-        last_used = hint.get('last_used')
-        if not last_used:
+        cooldown_start = hint.get('cooldown_start')
+        if not cooldown_start:
             continue
-        dt = _parse_iso_datetime(last_used)
+        dt = _parse_iso_datetime(cooldown_start)
         if dt is None:
             continue
         if dt.tzinfo is None:
             dt = dt.astimezone()
         normalized = dt.isoformat(timespec='seconds')
-        if hint['last_used'] != normalized:
-            hint['last_used'] = normalized
+        if hint['cooldown_start'] != normalized:
+            hint['cooldown_start'] = normalized
 
 
 def save_hints(hints_path, hints):
@@ -146,11 +147,11 @@ def save_hints(hints_path, hints):
         lines.append(f'    type: {hint.get("type", "perspective")}')
         lines.append(f'    cooldown_days: {hint.get("cooldown_days", 0)}')
         lines.append(f'    priority: {hint.get("priority", 1)}')
-        last_used = hint.get('last_used')
-        if last_used:
-            lines.append(f'    last_used: "{last_used}"')
+        cooldown_start = hint.get('cooldown_start')
+        if cooldown_start:
+            lines.append(f'    cooldown_start: "{cooldown_start}"')
         else:
-            lines.append(f'    last_used: null')
+            lines.append(f'    cooldown_start: null')
         if hint.get('disposable'):
             lines.append(f'    disposable: true')
         associated = hint.get('associated_reports')
@@ -180,23 +181,23 @@ def _parse_iso_datetime(s):
 def compute_weight(hint, now):
     priority = hint.get('priority', 1)
     cooldown_days = hint.get('cooldown_days', 0)
-    last_used = hint.get('last_used')
+    cooldown_start = hint.get('cooldown_start')
 
     if cooldown_days == 0:
         return float(priority)
 
-    if last_used is None:
+    if cooldown_start is None:
         days_since_cooldown = float(cooldown_days)
         return priority * (1 + days_since_cooldown / cooldown_days)
 
-    last_dt = _parse_iso_datetime(last_used)
-    if last_dt is None:
+    start_dt = _parse_iso_datetime(cooldown_start)
+    if start_dt is None:
         return float(priority)
 
-    if last_dt.tzinfo is None:
-        last_dt = last_dt.astimezone()
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.astimezone()
 
-    elapsed_days = (now - last_dt).total_seconds() / 86400.0
+    elapsed_days = (now - start_dt).total_seconds() / 86400.0
     days_since_cooldown = max(0, elapsed_days - cooldown_days)
 
     return priority * (1 + days_since_cooldown / cooldown_days)
@@ -204,26 +205,26 @@ def compute_weight(hint, now):
 
 def is_in_cooldown(hint, now):
     cooldown_days = hint.get('cooldown_days', 0)
-    last_used = hint.get('last_used')
+    cooldown_start = hint.get('cooldown_start')
 
     if cooldown_days == 0:
         return False
 
-    if last_used is None:
+    if cooldown_start is None:
         return False
 
-    last_dt = _parse_iso_datetime(last_used)
-    if last_dt is None:
+    start_dt = _parse_iso_datetime(cooldown_start)
+    if start_dt is None:
         return False
 
-    if last_dt.tzinfo is None:
-        last_dt = last_dt.astimezone()
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.astimezone()
 
-    elapsed_days = (now - last_dt).total_seconds() / 86400.0
+    elapsed_days = (now - start_dt).total_seconds() / 86400.0
     return elapsed_days < cooldown_days
 
 
-def select_hint(dreams_path, debug=False):
+def select_hint(dreams_path, debug=False, dry_run=False):
     hints_path = dreams_path / 'dream-hints.yaml'
     hints = load_hints(hints_path)
 
@@ -242,7 +243,7 @@ def select_hint(dreams_path, debug=False):
         if not is_in_cooldown(hint, now):
             available.append(hint)
         elif debug:
-            print(f"[DEBUG] 冷却中: {hint.get('description')} (cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
+            print(f"[DEBUG] 冷却中: {hint.get('description')} (cooldown_days={hint.get('cooldown_days')}, cooldown_start={hint.get('cooldown_start')})")
 
     if debug:
         print(f"[DEBUG] 可用提示数: {len(available)} / {len(hints)}")
@@ -255,6 +256,8 @@ def select_hint(dreams_path, debug=False):
     if random.random() < NO_HINT_PROBABILITY:
         if debug:
             print(f"[DEBUG] 无提示（固定概率 {NO_HINT_PROBABILITY*100:.0f}%）")
+        if dry_run:
+            print("[DRY-RUN] 不会实际保存改动")
         return {'selected': None}
 
     candidates = []
@@ -265,7 +268,7 @@ def select_hint(dreams_path, debug=False):
         candidates.append(hint)
         weights.append(w)
         if debug:
-            print(f"[DEBUG] 提示 {hint.get('description')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, last_used={hint.get('last_used')})")
+            print(f"[DEBUG] 提示 {hint.get('description')}: weight={w:.2f} (priority={hint.get('priority')}, cooldown_days={hint.get('cooldown_days')}, cooldown_start={hint.get('cooldown_start')})")
 
     total = sum(weights)
     r = random.uniform(0, total)
@@ -283,19 +286,35 @@ def select_hint(dreams_path, debug=False):
             print("[DEBUG] 选中：无提示")
         return {'selected': None}
 
-    selected['last_used'] = now.isoformat(timespec='seconds')
+    is_disposable = selected.get('disposable', False)
 
-    if selected.get('disposable', False):
+    if dry_run:
+        if debug:
+            if is_disposable:
+                print(f"[DEBUG] [DRY-RUN] 如果实际运行，将删除一次性提示: {selected.get('description')}")
+            else:
+                print(f"[DEBUG] [DRY-RUN] 如果实际运行，将更新 cooldown_start")
+        print("[DRY-RUN] 不会实际保存改动")
+        return {
+            'selected': selected,
+            'dry_run': True,
+            'would_delete': is_disposable,
+            'would_update_cooldown': not is_disposable,
+        }
+
+    selected['cooldown_start'] = now.isoformat(timespec='seconds')
+
+    if is_disposable:
         hints = [h for h in hints if h.get('description') != selected['description']]
         if debug:
             print(f"[DEBUG] 已删除一次性提示: {selected.get('description')}")
     else:
         for h in hints:
             if h.get('description') == selected.get('description'):
-                h['last_used'] = now.isoformat(timespec='seconds')
+                h['cooldown_start'] = now.isoformat(timespec='seconds')
                 break
 
-    _normalize_last_used(hints)
+    _normalize_cooldown_start(hints)
     save_hints(hints_path, hints)
 
     return {'selected': selected}
@@ -307,6 +326,8 @@ def main():
                         help='梦境目录路径（必需）')
     parser.add_argument('--debug', '-d', action='store_true',
                         help='显示详细调试信息')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='仅预览选择结果，不修改文件')
     args = parser.parse_args()
 
     dreams_path = Path(args.dreams_path)
@@ -315,16 +336,22 @@ def main():
 
     dreams_path.mkdir(parents=True, exist_ok=True)
 
-    result = select_hint(dreams_path, debug=args.debug)
+    result = select_hint(dreams_path, debug=args.debug, dry_run=args.dry_run)
 
     print("\n=== 入梦提示选择结果 ===")
+    if args.dry_run:
+        print("[DRY-RUN 模式] 以下为预览，未做任何实际改动")
     selected = result.get('selected')
     if selected is None:
         print("无提示：自由联想")
     else:
         print(f"描述: {selected.get('description')}")
         print(f"类型: {selected.get('type')}")
-        if selected.get('disposable'):
+        if result.get('would_delete'):
+            print("一次性: 是（如果实际运行将从提示集中删除）")
+        elif result.get('would_update_cooldown'):
+            print("状态: 如果实际运行将记录冷却起始时间")
+        elif selected.get('disposable'):
             print("一次性: 是（已从提示集中删除）")
         associated = selected.get('associated_reports')
         if associated:
