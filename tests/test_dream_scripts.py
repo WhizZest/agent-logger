@@ -903,7 +903,7 @@ class TestSelectHint:
             assert len(reloaded) == 1
             assert reloaded[0]['cooldown_start'] is None
 
-    def test_dry_run_no_hint_probability(self):
+    def test_dry_run_no_hint_random(self, monkeypatch):
         hints = [
             {
                 'description': 'hint',
@@ -916,11 +916,34 @@ class TestSelectHint:
         with tempfile.TemporaryDirectory() as tmp:
             dreams_path = Path(tmp)
             save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 0.1)
             result = select_hint(dreams_path, dry_run=True)
-            if result['selected'] is None:
-                assert 'dry_run' not in result
-            elif result.get('dry_run'):
-                assert result['would_delete'] or result['would_update_cooldown']
+            assert result['selected'] is None
+            assert 'dry_run' not in result
+
+            reloaded = load_hints(dreams_path / 'dream-hints.yaml')
+            assert len(reloaded) == 1
+
+    def test_dry_run_selected_random(self, monkeypatch):
+        hints = [
+            {
+                'description': 'hint',
+                'type': 'perspective',
+                'cooldown_days': 0,
+                'priority': 2,
+                'cooldown_start': None,
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            dreams_path = Path(tmp)
+            save_hints(dreams_path / 'dream-hints.yaml', hints)
+            monkeypatch.setattr(dream_hint_selector.random, 'random', lambda: 0.5)
+            monkeypatch.setattr(dream_hint_selector.random, 'uniform', lambda a, b: 0.0)
+            result = select_hint(dreams_path, dry_run=True)
+            assert result['selected'] is not None
+            assert result['selected']['description'] == 'hint'
+            assert result['dry_run'] is True
+            assert result['would_delete'] or result['would_update_cooldown']
 
             reloaded = load_hints(dreams_path / 'dream-hints.yaml')
             assert len(reloaded) == 1

@@ -308,11 +308,6 @@ def select_hint(dreams_path, debug=False, dry_run=False):
         hints = [h for h in hints if h.get('description') != selected['description']]
         if debug:
             print(f"[DEBUG] 已删除一次性提示: {selected.get('description')}")
-    else:
-        for h in hints:
-            if h.get('description') == selected.get('description'):
-                h['cooldown_start'] = now.isoformat(timespec='seconds')
-                break
 
     _normalize_cooldown_start(hints)
     save_hints(hints_path, hints)
